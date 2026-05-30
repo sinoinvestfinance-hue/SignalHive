@@ -1,0 +1,2166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CLAUDIO · DERIV SYSTEMS HUB</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=JetBrains+Mono:wght@300;400;500;700&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #D4AF37;
+  --gold-bright: #FFD700;
+  --gold-dim: #9A7D20;
+  --teal: #00F5D4;
+  --teal-dim: #00A896;
+  --teal-dark: #003D36;
+  --bg: #050709;
+  --bg-1: #080C10;
+  --bg-2: #0C1118;
+  --bg-3: #111820;
+  --glass: rgba(255,255,255,0.03);
+  --glass-border: rgba(212,175,55,0.18);
+  --glass-teal: rgba(0,245,212,0.08);
+  --text: #E8EAF0;
+  --text-dim: #8A909E;
+  --red: #FF4757;
+  --green: #2ED573;
+  --orange: #FFA502;
+  --purple: #A855F7;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 400;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── CANVAS BACKGROUND ─────────────────── */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── SCANLINE OVERLAY ──────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.04) 2px,
+    rgba(0,0,0,0.04) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── TICKER BAR ────────────────────────── */
+.ticker-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 36px;
+  background: rgba(5,7,9,0.96);
+  border-bottom: 1px solid rgba(212,175,55,0.3);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+
+.ticker-label {
+  flex-shrink: 0;
+  padding: 0 16px;
+  font-family: 'Orbitron', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--gold);
+  border-right: 1px solid rgba(212,175,55,0.3);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background: rgba(212,175,55,0.06);
+}
+
+.ticker-track {
+  display: flex;
+  animation: ticker 40s linear infinite;
+  gap: 0;
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 28px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  white-space: nowrap;
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+.ticker-sym { color: var(--text-dim); font-weight: 500; }
+.ticker-val { color: var(--text); font-weight: 400; }
+.tick-up { color: var(--green); }
+.tick-dn { color: var(--red); }
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── NAV ───────────────────────────────── */
+nav {
+  position: fixed;
+  top: 36px; left: 0; right: 0;
+  height: 60px;
+  background: rgba(5,7,9,0.92);
+  border-bottom: 1px solid rgba(212,175,55,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  z-index: 99;
+  backdrop-filter: blur(16px);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-logo {
+  width: 34px;
+  height: 34px;
+  border: 1.5px solid var(--gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  background: rgba(212,175,55,0.1);
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 900;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.nav-title {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 2px;
+}
+
+.nav-title span { color: var(--gold); }
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  list-style: none;
+}
+
+.nav-links a {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--gold); }
+
+.nav-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--green); }
+  50% { opacity: 0.5; box-shadow: 0 0 3px var(--green); }
+}
+
+/* ── MAIN CONTENT ──────────────────────── */
+main {
+  position: relative;
+  z-index: 2;
+  padding-top: 96px;
+}
+
+/* ── HERO ──────────────────────────────── */
+.hero {
+  min-height: 72vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 32px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 4px;
+  color: var(--teal);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: fade-up 0.8s ease forwards 0.2s;
+}
+
+.hero-title {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(2.4rem, 6vw, 5.5rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -1px;
+  margin-bottom: 8px;
+  opacity: 0;
+  animation: fade-up 0.8s ease forwards 0.4s;
+}
+
+.hero-title .line1 { display: block; color: var(--text); }
+.hero-title .line2 {
+  display: block;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-bright) 40%, var(--teal) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 400;
+  color: var(--text-dim);
+  max-width: 560px;
+  line-height: 1.7;
+  margin: 20px auto 36px;
+  opacity: 0;
+  animation: fade-up 0.8s ease forwards 0.6s;
+}
+
+.hero-stats {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: fade-up 0.8s ease forwards 0.8s;
+}
+
+.hero-stat {
+  text-align: center;
+}
+
+.hero-stat-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--gold);
+  line-height: 1;
+}
+
+.hero-stat-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-top: 6px;
+  text-transform: uppercase;
+}
+
+.hero-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(212,175,55,0.3);
+}
+
+.hero-scroll {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  opacity: 0;
+  animation: fade-up 0.8s ease forwards 1s;
+}
+
+.hero-scroll span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.scroll-arrow {
+  width: 20px; height: 20px;
+  border-right: 2px solid var(--gold);
+  border-bottom: 2px solid var(--gold);
+  transform: rotate(45deg);
+  animation: bounce-arrow 1.5s ease-in-out infinite;
+}
+
+@keyframes bounce-arrow {
+  0%, 100% { transform: rotate(45deg) translateY(0); }
+  50% { transform: rotate(45deg) translateY(6px); }
+}
+
+/* ── SECTION ───────────────────────────── */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 36px;
+}
+
+.section-line {
+  height: 2px;
+  flex: 1;
+  background: linear-gradient(90deg, var(--gold-dim), transparent);
+}
+
+.section-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: var(--gold);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.section-line-r {
+  height: 2px;
+  flex: 1;
+  background: linear-gradient(90deg, transparent, var(--gold-dim));
+}
+
+/* ── FILTER BAR ────────────────────────── */
+.filter-section {
+  padding: 0 40px 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  padding: 8px 18px;
+  border: 1px solid rgba(212,175,55,0.25);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.2s;
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  text-transform: uppercase;
+}
+
+.filter-btn:hover,
+.filter-btn.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(212,175,55,0.08);
+}
+
+/* ── APPS GRID ─────────────────────────── */
+.apps-section {
+  padding: 0 40px 80px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.apps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+/* ── APP CARD ──────────────────────────── */
+.app-card {
+  position: relative;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  clip-path: polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px));
+}
+
+.app-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(212,175,55,0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.app-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(212,175,55,0.45);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 32px rgba(212,175,55,0.08);
+}
+
+.app-card:hover .card-glow { opacity: 1; }
+.app-card:hover .launch-btn { border-color: var(--gold); color: var(--gold); }
+
+.card-glow {
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+}
+
+/* variant teal glow */
+.app-card.teal-accent .card-glow {
+  background: radial-gradient(circle, rgba(0,245,212,0.1) 0%, transparent 70%);
+}
+.app-card.teal-accent:hover { border-color: rgba(0,245,212,0.4); box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 32px rgba(0,245,212,0.08); }
+.app-card.teal-accent .card-stripe { background: var(--teal); }
+.app-card.teal-accent .card-type-badge { background: rgba(0,245,212,0.12); color: var(--teal); border-color: rgba(0,245,212,0.3); }
+.app-card.teal-accent .app-icon-ring { border-color: rgba(0,245,212,0.4); }
+.app-card.teal-accent .card-metric-val { color: var(--teal); }
+
+/* variant purple glow */
+.app-card.purple-accent .card-glow { background: radial-gradient(circle, rgba(168,85,247,0.12) 0%, transparent 70%); }
+.app-card.purple-accent:hover { border-color: rgba(168,85,247,0.4); box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 32px rgba(168,85,247,0.08); }
+.app-card.purple-accent .card-stripe { background: var(--purple); }
+.app-card.purple-accent .card-type-badge { background: rgba(168,85,247,0.12); color: var(--purple); border-color: rgba(168,85,247,0.3); }
+.app-card.purple-accent .app-icon-ring { border-color: rgba(168,85,247,0.4); }
+.app-card.purple-accent .card-metric-val { color: var(--purple); }
+
+.card-stripe {
+  height: 2px;
+  width: 100%;
+  background: var(--gold);
+}
+
+.card-body { padding: 24px; }
+
+.card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.app-icon-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.app-icon-ring {
+  width: 48px; height: 48px;
+  border: 1.5px solid rgba(212,175,55,0.4);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(212,175,55,0.06);
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.app-name {
+  font-family: 'Orbitron', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.5px;
+  line-height: 1.3;
+}
+
+.app-version {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-top: 3px;
+}
+
+.card-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.status-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  padding: 3px 9px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.status-live { background: rgba(46,213,115,0.12); color: var(--green); border: 1px solid rgba(46,213,115,0.3); }
+.status-beta { background: rgba(255,165,2,0.12); color: var(--orange); border: 1px solid rgba(255,165,2,0.3); }
+.status-dev  { background: rgba(168,85,247,0.12); color: var(--purple); border: 1px solid rgba(168,85,247,0.3); }
+.status-stable { background: rgba(0,245,212,0.12); color: var(--teal); border: 1px solid rgba(0,245,212,0.3); }
+
+.card-type-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  background: rgba(212,175,55,0.1);
+  color: var(--gold-dim);
+  border: 1px solid rgba(212,175,55,0.25);
+}
+
+.card-desc {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+
+.tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  padding: 3px 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-dim);
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+.card-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.card-metric { text-align: center; }
+.card-metric-val {
+  font-family: 'Orbitron', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+  display: block;
+}
+.card-metric-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.launch-btn {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 10px 20px;
+  border: 1px solid rgba(212,175,55,0.35);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.25s;
+  text-transform: uppercase;
+  clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+}
+
+.launch-btn:hover {
+  background: rgba(212,175,55,0.1);
+  color: var(--gold);
+  border-color: var(--gold);
+}
+
+.launch-btn svg { width: 12px; height: 12px; fill: currentColor; }
+
+.card-size-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+/* ── FEATURED CARD (wide) ──────────────── */
+.app-card.featured {
+  grid-column: span 2;
+}
+
+@media (max-width: 860px) {
+  .app-card.featured { grid-column: span 1; }
+}
+
+.featured-inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+@media (max-width: 700px) {
+  .featured-inner { grid-template-columns: 1fr; }
+}
+
+.featured-right {
+  padding: 24px;
+  border-left: 1px solid rgba(212,175,55,0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.feature-list { list-style: none; }
+.feature-list li {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.feature-list li::before {
+  content: '▸';
+  color: var(--gold);
+  font-size: 10px;
+}
+
+/* ── STATS ROW ─────────────────────────── */
+.stats-section {
+  padding: 60px 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1px;
+  background: rgba(212,175,55,0.12);
+  border: 1px solid rgba(212,175,55,0.12);
+}
+
+.stat-cell {
+  background: var(--bg-1);
+  padding: 28px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-cell::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 40px; height: 2px;
+  background: var(--gold);
+}
+
+.stat-num {
+  font-family: 'Orbitron', monospace;
+  font-size: 2.2rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--gold), var(--teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-lbl {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+/* ── FOOTER ────────────────────────────── */
+footer {
+  position: relative;
+  z-index: 2;
+  border-top: 1px solid rgba(212,175,55,0.12);
+  padding: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: gap;
+  gap: 20px;
+}
+
+.footer-brand {
+  font-family: 'Orbitron', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 2px;
+}
+
+.footer-copy {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+
+.footer-ver {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: var(--teal-dim);
+  letter-spacing: 1px;
+}
+
+/* ── ANIMATIONS ────────────────────────── */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── RESPONSIVE ────────────────────────── */
+@media (max-width: 768px) {
+  nav { padding: 0 16px; }
+  .nav-links { display: none; }
+  .apps-section, .filter-section, .stats-section { padding-left: 16px; padding-right: 16px; }
+  .apps-grid { grid-template-columns: 1fr; }
+  .hero { padding: 40px 16px; }
+  .hero-stats { gap: 20px; }
+  footer { flex-direction: column; text-align: center; }
+}
+
+/* ── SEARCH BAR ────────────────────────── */
+.search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 300px;
+}
+
+.search-input {
+  width: 100%;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(212,175,55,0.2);
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  padding: 8px 14px 8px 34px;
+  outline: none;
+  transition: border-color 0.2s;
+  clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+}
+
+.search-input:focus { border-color: var(--gold); }
+.search-input::placeholder { color: var(--text-dim); }
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+/* ── CORNER DECORATIONS ────────────────── */
+.corner-dec {
+  position: absolute;
+  width: 16px; height: 16px;
+  pointer-events: none;
+}
+.corner-dec.tl { top: 0; left: 0; border-top: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+.corner-dec.tr { top: 0; right: 0; border-top: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+.corner-dec.bl { bottom: 0; left: 0; border-bottom: 2px solid var(--gold); border-left: 2px solid var(--gold); }
+.corner-dec.br { bottom: 0; right: 0; border-bottom: 2px solid var(--gold); border-right: 2px solid var(--gold); }
+</style>
+</head>
+<body>
+
+<canvas id="bg-canvas"></canvas>
+
+<!-- ── TICKER ─────────────────────────────── -->
+<div class="ticker-bar">
+  <div class="ticker-label">LIVE</div>
+  <div style="overflow:hidden;flex:1;display:flex;">
+    <div class="ticker-track" id="ticker-track"></div>
+  </div>
+</div>
+
+<!-- ── NAV ───────────────────────────────── -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">C</div>
+    <div class="nav-title">CLAUDIO · <span>DERIV HUB</span></div>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#apps">Apps</a></li>
+    <li><a href="#stats">Stats</a></li>
+    <li><a href="https://deriv.com" target="_blank">Deriv ↗</a></li>
+  </ul>
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    <span>SYSTEMS OPERATIONAL</span>
+  </div>
+</nav>
+
+<!-- ── MAIN ──────────────────────────────── -->
+<main>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-eyebrow">// QUANTITATIVE TRADING SYSTEMS · DERIV PLATFORM</div>
+    <h1 class="hero-title">
+      <span class="line1">MISSION CONTROL</span>
+      <span class="line2">TRADING HUB</span>
+    </h1>
+    <p class="hero-sub">Centralised access to all Claudio's Deriv trading applications — AI-powered signal engines, real-time PWAs, MT5 systems, and SMC analytics platforms.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num" id="app-count">30</div>
+        <div class="hero-stat-lbl">TOTAL APPS</div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">27</div>
+        <div class="hero-stat-lbl">PWA APPS</div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">4</div>
+        <div class="hero-stat-lbl">MT5 SYSTEMS</div>
+      </div>
+      <div class="hero-divider"></div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">∞</div>
+        <div class="hero-stat-lbl">INDICES</div>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>SCROLL TO EXPLORE</span>
+      <div class="scroll-arrow"></div>
+    </div>
+  </section>
+
+  <!-- STATS ROW -->
+  <section class="stats-section" id="stats">
+    <div class="section-header">
+      <div class="section-line"></div>
+      <div class="section-label">// PLATFORM OVERVIEW</div>
+      <div class="section-line-r"></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-cell reveal">
+        <div class="stat-num">50k+</div>
+        <div class="stat-lbl">Lines of Code</div>
+      </div>
+      <div class="stat-cell reveal">
+        <div class="stat-num">38</div>
+        <div class="stat-lbl">MT5 System Files</div>
+      </div>
+      <div class="stat-cell reveal">
+        <div class="stat-num">3</div>
+        <div class="stat-lbl">ML Ensembles</div>
+      </div>
+      <div class="stat-cell reveal">
+        <div class="stat-num">16</div>
+        <div class="stat-lbl">Bugs Resolved</div>
+      </div>
+      <div class="stat-cell reveal">
+        <div class="stat-num">V25+</div>
+        <div class="stat-lbl">Synthetic Indices</div>
+      </div>
+      <div class="stat-cell reveal">
+        <div class="stat-num">100%</div>
+        <div class="stat-lbl">Real API Only</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FILTER + APPS -->
+  <section class="filter-section" id="apps">
+    <div class="section-header">
+      <div class="section-line"></div>
+      <div class="section-label">// APPLICATION SUITE</div>
+      <div class="section-line-r"></div>
+    </div>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all">ALL APPS</button>
+      <button class="filter-btn" data-filter="pwa">PWA</button>
+      <button class="filter-btn" data-filter="mt5">MT5</button>
+      <button class="filter-btn" data-filter="python">PYTHON</button>
+      <button class="filter-btn" data-filter="ai">AI/ML</button>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input type="text" class="search-input" id="search-input" placeholder="SEARCH APPS...">
+      </div>
+    </div>
+  </section>
+
+  <section class="apps-section">
+    <div class="apps-grid" id="apps-grid">
+
+      <!-- ── NEXUS RF Pro ──────────── -->
+      <div class="app-card featured teal-accent reveal" data-tags="mt5 ai pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="corner-dec tl"></div><div class="corner-dec tr"></div><div class="corner-dec bl"></div><div class="corner-dec br"></div>
+        <div class="featured-inner">
+          <div class="card-body">
+            <div class="card-top">
+              <div class="app-icon-wrap">
+                <div class="app-icon-ring">⬡</div>
+                <div>
+                  <div class="app-name">NEXUS RF PRO</div>
+                  <div class="app-version">v2.0 · FLAGSHIP</div>
+                </div>
+              </div>
+              <div class="card-status">
+                <span class="status-badge status-live">LIVE</span>
+                <span class="card-type-badge">PWA + AI</span>
+              </div>
+            </div>
+            <p class="card-desc">Flagship single-file PWA with full SMC engine, multi-timeframe confluence scoring, Canvas charting, and Anthropic AI integration. The crown jewel of the suite.</p>
+            <div class="card-tags">
+              <span class="tag">SMC ENGINE</span>
+              <span class="tag">CANVAS 2D</span>
+              <span class="tag">ANTHROPIC API</span>
+              <span class="tag">MULTI-TF</span>
+              <span class="tag">WEBSOCKET</span>
+            </div>
+            <div class="card-metrics">
+              <div class="card-metric"><span class="card-metric-val">MTF</span><span class="card-metric-lbl">Confluence</span></div>
+              <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Engine</span></div>
+              <div class="card-metric"><span class="card-metric-val">AI</span><span class="card-metric-lbl">Signals</span></div>
+            </div>
+            <div class="card-footer">
+              <a href="NEXUSRF.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+              <span class="card-size-badge">SINGLE FILE</span>
+            </div>
+          </div>
+          <div class="featured-right">
+            <ul class="feature-list">
+              <li>Real-time Deriv WebSocket API integration</li>
+              <li>Break of Structure (BOS) + CHoCH detection</li>
+              <li>Fair Value Gap (FVG) analysis engine</li>
+              <li>Order block identification system</li>
+              <li>Multi-timeframe confluence scoring</li>
+              <li>Claude AI signal interpretation layer</li>
+              <li>Canvas 2D custom chart renderer</li>
+              <li>Martingale + D'Alembert stake systems</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── AXIOM AI PRO ───────────── -->
+      <div class="app-card reveal" data-tags="pwa ai">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">◈</div>
+              <div>
+                <div class="app-name">AXIOM AI PRO</div>
+                <div class="app-version">v1.5 · AI TERMINAL</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-live">LIVE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">Advanced AI trading terminal with full SMC engine, multi-timeframe confluence scoring, and Anthropic intelligence layer for synthetic volatility indices.</p>
+          <div class="card-tags">
+            <span class="tag">SMC</span><span class="tag">VOLATILITY IDX</span><span class="tag">ANTHROPIC</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">V10-V100</span><span class="card-metric-lbl">Indices</span></div>
+            <div class="card-metric"><span class="card-metric-val">AI</span><span class="card-metric-lbl">Engine</span></div>
+            <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Core</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="AxiomDigitAi/index.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──DerivAI TOUCH INTELLIGENCE ──────────────── -->
+      <div class="app-card teal-accent reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⚡</div>
+              <div>
+                <div class="app-name">DerivAI TOUCH INTELLIGENCE</div>
+                <div class="app-version">v3.1 · 16 BUGS FIXED</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">Production-hardened trading bot with resolved WebSocket lifecycle bugs, mobile-optimised layout, and complete integer req_id compliance throughout.</p>
+          <div class="card-tags">
+            <span class="tag">MOBILE-FIRST</span><span class="tag">WS LIFECYCLE</span><span class="tag">BUG-FREE</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">16</span><span class="card-metric-lbl">Bugs Fixed</span></div>
+            <div class="card-metric"><span class="card-metric-val">MOBILE</span><span class="card-metric-lbl">Layout</span></div>
+            <div class="card-metric"><span class="card-metric-val">INT</span><span class="card-metric-lbl">req_id</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="AIbot_TNT_v2.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VOLTA SIGNAL PRO ───────── -->
+      <div class="app-card reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⚑</div>
+              <div>
+                <div class="app-name">VOLTA SIGNAL PRO</div>
+                <div class="app-version">v2.0 · REBUILT</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-live">LIVE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">Rebuilt with correct Deriv proposal→buy two-step execution flow and custom Canvas2D candlestick renderer. Real API only, no simulated data.</p>
+          <div class="card-tags">
+            <span class="tag">PROPOSAL→BUY</span><span class="tag">CANVAS2D</span><span class="tag">REAL API</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">2-STEP</span><span class="card-metric-lbl">Flow</span></div>
+            <div class="card-metric"><span class="card-metric-val">CANVAS</span><span class="card-metric-lbl">Charts</span></div>
+            <div class="card-metric"><span class="card-metric-val">LIVE</span><span class="card-metric-lbl">Data</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="VoltaSignal.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── NEXUS RF TRADER ────────── -->
+      <div class="app-card teal-accent reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">◉</div>
+              <div>
+                <div class="app-name">NEXUS RF TRADER</div>
+                <div class="app-version">v2.5 · STRICT API</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">Complete rebuild eliminating all simulated and demo data. Strict real-API-only enforcement with rise/fall signal engine and risk management layer.</p>
+          <div class="card-tags">
+            <span class="tag">REAL-API-ONLY</span><span class="tag">NO SIMULATION</span><span class="tag">RISK MGR</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">0</span><span class="card-metric-lbl">Simulated</span></div>
+            <div class="card-metric"><span class="card-metric-val">R/F</span><span class="card-metric-lbl">Signals</span></div>
+            <div class="card-metric"><span class="card-metric-val">LIVE</span><span class="card-metric-lbl">Only</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="NEXUSRF.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DerivAI TOUCH INTELLIGENCE V3 ────────── -->
+      <div class="app-card purple-accent reveal" data-tags="mt5 python ai">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">🧠</div>
+              <div>
+                <div class="app-name">DerivAI TOUCH INTELLIGENCE V3</div>
+                <div class="app-version">v3.0.0 · ML ENSEMBLE</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-live">LIVE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc"></p>
+          <div class="card-tags">
+            <span class="tag">XGBOOST</span><span class="tag">LIGHTGBM</span><span class="tag">RF</span><span class="tag">DOCKER</span><span class="tag">BACKTEST</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">38</span><span class="card-metric-lbl">Files</span></div>
+            <div class="card-metric"><span class="card-metric-val">3</span><span class="card-metric-lbl">ML Models</span></div>
+            <div class="card-metric"><span class="card-metric-val">🐋</span><span class="card-metric-lbl">Docker</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="TouchNoTouch.html" class="launch-btn">OPEN <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">MULTI-FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──  DERIVAI RISEBOT PRO AI TRADING SYSTEM v3.0 ── -->
+      <div class="app-card purple-accent reveal" data-tags="python ai">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⬟</div>
+              <div>
+                <div class="app-name">DERIVAI RISEBOT PRO AI TRADING SYSTEM v3.0</div>
+                <div class="app-version">v1.0 · FASTAPI PLATFORM</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-beta">BETA</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">Multi-file Python/FastAPI platform with async SQLAlchemy, SMC analysis engine, and ML ensemble intelligence. Full REST API + HTML frontend.</p>
+          <div class="card-tags">
+            <span class="tag">FASTAPI</span><span class="tag">SQLALCHEMY</span><span class="tag">SMC</span><span class="tag">ML</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">ASYNC</span><span class="card-metric-lbl">SQL</span></div>
+            <div class="card-metric"><span class="card-metric-val">REST</span><span class="card-metric-lbl">API</span></div>
+            <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Engine</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="DerivAI_RiseBot_Pro_Mobile.html" class="launch-btn">OPEN <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">MULTI-FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── NEXUS PRO DERIV AI · v4.0 ──────── -->
+      <div class="app-card reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">◆</div>
+              <div>
+                <div class="app-name">NEXUS PRO DERIV AI · v4.0</div>
+                <div class="app-version">v4.0 · AUDITED</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+
+          </p>
+          <div class="card-tags">
+            <span class="tag">FULL AUDIT</span><span class="tag">NO SIMULATION</span><span class="tag">INDICATORS</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">✓</span><span class="card-metric-lbl">Audited</span></div>
+            <div class="card-metric"><span class="card-metric-val">REAL</span><span class="card-metric-lbl">API Only</span></div>
+            <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Core</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="DerivAI_Nexus_Pro_v4.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──  AURUM AI MULTIPLIER ENGINE V2 ───────────── -->
+      <div class="app-card teal-accent reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⊞</div>
+              <div>
+                <div class="app-name"> AURUM AI MULTIPLIER ENGINE V2</div>
+                <div class="app-version">v1.8 · INDICATOR SUITE</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-beta">BETA</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">INDICATORS</span><span class="tag">CANDLE PATTERNS</span><span class="tag">SMC</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">20+</span><span class="card-metric-lbl">Indicators</span></div>
+            <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Analysis</span></div>
+            <div class="card-metric"><span class="card-metric-val">AUTO</span><span class="card-metric-lbl">Patterns</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="Aurum_Trader_v2.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──NEXUS AI TRADER ───────── -->
+      <div class="app-card reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⬢</div>
+              <div>
+                <div class="app-name">NEXUS AI TRADER</div>
+                <div class="app-version">v1.0 · 3 XML STRATEGIES</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">EVEN/ODD</span><span class="tag">OVER/UNDER</span><span class="tag">XML STRATEGY</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">3</span><span class="card-metric-lbl">Strategies</span></div>
+            <div class="card-metric"><span class="card-metric-val">INT</span><span class="card-metric-lbl">req_id</span></div>
+            <div class="card-metric"><span class="card-metric-val">AUDIT</span><span class="card-metric-lbl">Passed</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="NexusAI Trader.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DERIV PRO ── -->
+      <div class="app-card teal-accent reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">◎</div>
+              <div>
+                <div class="app-name">DERIV PRO</div>
+                <div class="app-version">v3.0 · MOBILE-FIRST</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">DERIV PRO</span><span class="tag">RAF LOOP</span><span class="tag">MOBILE</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">60fps</span><span class="card-metric-lbl">RAF Loop</span></div>
+            <div class="card-metric"><span class="card-metric-val">E/O, OV/UN, R/F</span><span class="card-metric-lbl">Contracts</span></div>
+            <div class="card-metric"><span class="card-metric-val">MOB</span><span class="card-metric-lbl">First</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="DerivProTrader.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RFREVERSAL PWA ─────────── -->
+      <div class="app-card reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">↺</div>
+              <div>
+                <div class="app-name">RFREVERSAL PWA</div>
+                <div class="app-version">v1.2 · XML→LIVE</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+
+          </p>
+          <div class="card-tags">
+            <span class="tag">OV4/UN5</span><span class="tag">REVERSAL</span><span class="tag">5 BUGS FIXED</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">5</span><span class="card-metric-lbl">Bugs Fixed</span></div>
+            <div class="card-metric"><span class="card-metric-val">O/U</span><span class="card-metric-lbl">Strategy</span></div>
+            <div class="card-metric"><span class="card-metric-val">INT</span><span class="card-metric-lbl">req_id</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="RFrev.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROVIBE ───────────────── -->
+      <div class="app-card teal-accent reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">∿</div>
+              <div>
+                <div class="app-name">PROVIBE</div>
+                <div class="app-version">v1.1 · DIGIT BARRIERS</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">Digit contract barrier parameter specialist. Debugged and resolved critical barrier parameter issue affecting DIGITMATCH/DIFF contract proposal flow.</p>
+          <div class="card-tags">
+            <span class="tag">DIGIT CONTRACTS</span><span class="tag">BARRIER FIX</span><span class="tag">MATCH/DIFF</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">M/D</span><span class="card-metric-lbl">Digit Type</span></div>
+            <div class="card-metric"><span class="card-metric-val">FIX</span><span class="card-metric-lbl">Barrier</span></div>
+            <div class="card-metric"><span class="card-metric-val">LIVE</span><span class="card-metric-lbl">API</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="ProVibe.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DIGIT AI ──────────── -->
+      <div class="app-card purple-accent reveal" data-tags="pwa ai">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">🌌</div>
+              <div>
+                <div class="app-name">DIGIT AI</div>
+                <div class="app-version">v2.0 · DUAL BUILD</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-live">LIVE</span>
+              <span class="card-type-badge">PWA + VITE</span>
+            </div>
+          </div>
+          <p class="card-desc">
+
+          </p>
+          <div class="card-tags">
+            <span class="tag">TYPESCRIPT</span><span class="tag">VITE</span><span class="tag">MONOREPO</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">2</span><span class="card-metric-lbl">Variants</span></div>
+            <div class="card-metric"><span class="card-metric-val">TS</span><span class="card-metric-lbl">Typed</span></div>
+            <div class="card-metric"><span class="card-metric-val">VITE</span><span class="card-metric-lbl">Build</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="DIGITAI.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE + MONOREPO</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DerivAI ACCUMULATOR PLATFORM v2 ──────────── -->
+      <div class="app-card featured teal-accent reveal" data-tags="mt5 ai pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="corner-dec tl"></div><div class="corner-dec tr"></div><div class="corner-dec bl"></div><div class="corner-dec br"></div>
+        <div class="featured-inner">
+          <div class="card-body">
+            <div class="card-top">
+              <div class="app-icon-wrap">
+                <div class="app-icon-ring">⬡</div>
+                <div>
+                  <div class="app-name">DerivAI ACCUMULATOR PLATFORM v2</div>
+                  <div class="app-version">v2.0 · FLAGSHIP</div>
+                </div>
+              </div>
+              <div class="card-status">
+                <span class="status-badge status-live">LIVE</span>
+                <span class="card-type-badge">PWA + AI</span>
+              </div>
+            </div>
+            <p class="card-desc">Flagship single-file PWA with full SMC engine, multi-timeframe confluence scoring, Canvas charting, and Anthropic AI integration. The crown jewel of the suite.</p>
+            <div class="card-tags">
+              <span class="tag">SMC ENGINE</span>
+              <span class="tag">CANVAS 2D</span>
+              <span class="tag">ANTHROPIC API</span>
+              <span class="tag">MULTI-TF</span>
+              <span class="tag">WEBSOCKET</span>
+            </div>
+            <div class="card-metrics">
+              <div class="card-metric"><span class="card-metric-val">MTF</span><span class="card-metric-lbl">Confluence</span></div>
+              <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Engine</span></div>
+              <div class="card-metric"><span class="card-metric-val">AI</span><span class="card-metric-lbl">Signals</span></div>
+            </div>
+            <div class="card-footer">
+              <a href="deriv-accumulator-ai-v2.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+              <span class="card-size-badge">SINGLE FILE</span>
+            </div>
+          </div>
+          <div class="featured-right">
+            <ul class="feature-list">
+              <li>Real-time Deriv WebSocket API integration</li>
+              <li>Break of Structure (BOS) + CHoCH detection</li>
+              <li>Fair Value Gap (FVG) analysis engine</li>
+              <li>Order block identification system</li>
+              <li>Multi-timeframe confluence scoring</li>
+              <li>Claude AI signal interpretation layer</li>
+              <li>Canvas 2D custom chart renderer</li>
+              <li>Martingale + D'Alembert stake systems</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DerivAI EvenOdd Pro v2 ───────────── -->
+      <div class="app-card reveal" data-tags="pwa ai">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">◈</div>
+              <div>
+                <div class="app-name">DerivAI EvenOdd Pro v2 </div>
+                <div class="app-version">v1.5 · AI TERMINAL</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-live">LIVE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">SMC</span><span class="tag">VOLATILITY IDX</span><span class="tag">ANTHROPIC</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">V10-V100</span><span class="card-metric-lbl">Indices</span></div>
+            <div class="card-metric"><span class="card-metric-val">AI</span><span class="card-metric-lbl">Engine</span></div>
+            <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Core</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="DerivAI_EvenOdd_Pro_v2.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── SNIPER PRO AI-POWERED DERIV TRADING PLATFORM ──────────────── -->
+      <div class="app-card teal-accent reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⚡</div>
+              <div>
+                <div class="app-name">SNIPER PRO AI-POWERED DERIV TRADING PLATFORM </div>
+                <div class="app-version">v3.1 · 16 BUGS FIXED</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">MOBILE-FIRST</span><span class="tag">WS LIFECYCLE</span><span class="tag">BUG-FREE</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">16</span><span class="card-metric-lbl">Bugs Fixed</span></div>
+            <div class="card-metric"><span class="card-metric-val">MOBILE</span><span class="card-metric-lbl">Layout</span></div>
+            <div class="card-metric"><span class="card-metric-val">INT</span><span class="card-metric-lbl">req_id</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="deriv-sniper-pro.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DerivAI Pro Intelligent Options Trading Platform ───────── -->
+      <div class="app-card reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⚑</div>
+              <div>
+                <div class="app-name">DerivAI Pro Intelligent Options Trading Platform</div>
+                <div class="app-version">v2.0 · REBUILT</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-live">LIVE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">PROPOSAL→BUY</span><span class="tag">CANVAS2D</span><span class="tag">REAL API</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">2-STEP</span><span class="card-metric-lbl">Flow</span></div>
+            <div class="card-metric"><span class="card-metric-val">CANVAS</span><span class="card-metric-lbl">Charts</span></div>
+            <div class="card-metric"><span class="card-metric-val">LIVE</span><span class="card-metric-lbl">Data</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="deriv-trading-platform-v2.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DERIV TRADING PLATFORM V3 ────────── -->
+      <div class="app-card teal-accent reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">◉</div>
+              <div>
+                <div class="app-name">NEXUS RF TRADER</div>
+                <div class="app-version">v2.5 · STRICT API</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">Complete rebuild eliminating all simulated and demo data. Strict real-API-only enforcement with rise/fall signal engine and risk management layer.</p>
+          <div class="card-tags">
+            <span class="tag">REAL-API-ONLY</span><span class="tag">NO SIMULATION</span><span class="tag">RISK MGR</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">0</span><span class="card-metric-lbl">Simulated</span></div>
+            <div class="card-metric"><span class="card-metric-val">R/F</span><span class="card-metric-lbl">Signals</span></div>
+            <div class="card-metric"><span class="card-metric-val">LIVE</span><span class="card-metric-lbl">Only</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="deriv-trading-platform-v3.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EntryScan-Deriv-Live ────────── -->
+      <div class="app-card purple-accent reveal" data-tags="mt5 python ai">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">🧠</div>
+              <div>
+                <div class="app-name">EntryScan-Deriv-Live</div>
+                <div class="app-version">v3.0.0 · ML ENSEMBLE</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-live">LIVE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc"></p>
+          <div class="card-tags">
+            <span class="tag">XGBOOST</span><span class="tag">LIGHTGBM</span><span class="tag">RF</span><span class="tag">DOCKER</span><span class="tag">BACKTEST</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">38</span><span class="card-metric-lbl">Files</span></div>
+            <div class="card-metric"><span class="card-metric-val">3</span><span class="card-metric-lbl">ML Models</span></div>
+            <div class="card-metric"><span class="card-metric-val">🐋</span><span class="card-metric-lbl">Docker</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="TouchNoTouch.html" class="launch-btn">OPEN <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">MULTI-FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── EVENODD NEXUS ── -->
+      <div class="app-card purple-accent reveal" data-tags="python ai">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⬟</div>
+              <div>
+                <div class="app-name"> EVENODD NEXUS</div>
+                <div class="app-version">v1.0 · FASTAPI PLATFORM</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-beta">BETA</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">FASTAPI</span><span class="tag">SQLALCHEMY</span><span class="tag">SMC</span><span class="tag">ML</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">ASYNC</span><span class="card-metric-lbl">SQL</span></div>
+            <div class="card-metric"><span class="card-metric-val">REST</span><span class="card-metric-lbl">API</span></div>
+            <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Engine</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="EvenOdd_Nexus.html" class="launch-btn">OPEN <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">MULTI-FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── NEXUS DIFFERS ──────── -->
+      <div class="app-card reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">◆</div>
+              <div>
+                <div class="app-name">DERIVAI NEXUS PRO</div>
+                <div class="app-version">v3.0 · AUDITED</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">FULL AUDIT</span><span class="tag">NO SIMULATION</span><span class="tag">INDICATORS</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">✓</span><span class="card-metric-lbl">Audited</span></div>
+            <div class="card-metric"><span class="card-metric-val">REAL</span><span class="card-metric-lbl">API Only</span></div>
+            <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Core</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="nexus-differs.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──VolatiX AI DERIV INTELLIGENCE PLATFORM ───────────── -->
+      <div class="app-card teal-accent reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⊞</div>
+              <div>
+                <div class="app-name">VolatiX AI DERIV INTELLIGENCE PLATFORM </div>
+                <div class="app-version">v1.8 · INDICATOR SUITE</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-beta">BETA</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">INDICATORS</span><span class="tag">CANDLE PATTERNS</span><span class="tag">SMC</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">20+</span><span class="card-metric-lbl">Indicators</span></div>
+            <div class="card-metric"><span class="card-metric-val">SMC</span><span class="card-metric-lbl">Analysis</span></div>
+            <div class="card-metric"><span class="card-metric-val">AUTO</span><span class="card-metric-lbl">Patterns</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="volatix-ai.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── VOLTRIX AI DERIV INTELLIGENCE PLATFORM ───────── -->
+      <div class="app-card reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">⬢</div>
+              <div>
+                <div class="app-name">VOLTRIX AI DERIV INTELLIGENCE PLATFORM </div>
+                <div class="app-version">v1.0 · 3 XML STRATEGIES</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">EVEN/ODD</span><span class="tag">OVER/UNDER</span><span class="tag">XML STRATEGY</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">3</span><span class="card-metric-lbl">Strategies</span></div>
+            <div class="card-metric"><span class="card-metric-val">INT</span><span class="card-metric-lbl">req_id</span></div>
+            <div class="card-metric"><span class="card-metric-val">AUDIT</span><span class="card-metric-lbl">Passed</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="Voltrix.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DERIVAI TERMINAL── -->
+      <div class="app-card teal-accent reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">◎</div>
+              <div>
+                <div class="app-name">DERIVAI TERMINAL</div>
+                <div class="app-version">v3.0 · MOBILE-FIRST</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+            
+          </p>
+          <div class="card-tags">
+            <span class="tag">DERIVAI TERMINAL</span><span class="tag">RAF LOOP</span><span class="tag">MOBILE</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">60fps</span><span class="card-metric-lbl">RAF Loop</span></div>
+            <div class="card-metric"><span class="card-metric-val">T/NT</span><span class="card-metric-lbl">Contracts</span></div>
+            <div class="card-metric"><span class="card-metric-val">MOB</span><span class="card-metric-lbl">First</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="DerivAI/index.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">MULTI FILE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ──DERIVAI PRO QUANTUM TRADING TERMINAL v3.0 ─────────── -->
+      <div class="app-card reveal" data-tags="pwa">
+        <div class="card-stripe"></div>
+        <div class="card-glow"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="app-icon-wrap">
+              <div class="app-icon-ring">↺</div>
+              <div>
+                <div class="app-name">DERIVAI PRO QUANTUM TRADING TERMINAL v3.0 </div>
+                <div class="app-version">v1.2 · XML→LIVE</div>
+              </div>
+            </div>
+            <div class="card-status">
+              <span class="status-badge status-stable">STABLE</span>
+              <span class="card-type-badge">PWA</span>
+            </div>
+          </div>
+          <p class="card-desc">
+
+          </p>
+          <div class="card-tags">
+            <span class="tag">OV4/UN5</span><span class="tag">REVERSAL</span><span class="tag">5 BUGS FIXED</span>
+          </div>
+          <div class="card-metrics">
+            <div class="card-metric"><span class="card-metric-val">5</span><span class="card-metric-lbl">Bugs Fixed</span></div>
+            <div class="card-metric"><span class="card-metric-val">O/U</span><span class="card-metric-lbl">Strategy</span></div>
+            <div class="card-metric"><span class="card-metric-val">INT</span><span class="card-metric-lbl">req_id</span></div>
+          </div>
+          <div class="card-footer">
+            <a href="DerivQuant/index.html" class="launch-btn">LAUNCH <svg viewBox="0 0 16 16"><path d="M8 0L6.6 1.4 12.2 7H0v2h12.2l-5.6 5.6L8 16l8-8z"/></svg></a>
+            <span class="card-size-badge">SINGLE FILE</span>
+          </div>
+        </div>
+      </div>
+
+       
+
+    </div><!-- end apps-grid -->
+  </section>
+
+</main>
+
+<!-- ── FOOTER ─────────────────────────────── -->
+<footer>
+  <div class="footer-brand">CLAUDIO · DERIV SYSTEMS HUB</div>
+  <div class="footer-copy">© 2025 · ALL DERIV TRADING APPLICATIONS</div>
+  <div class="footer-ver">INDEX v1.0 · 13 APPS LOADED</div>
+</footer>
+
+<script>
+/* ── CANVAS BACKGROUND ─────────────────────────── */
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+let W, H, particles = [], gridLines = [];
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function initParticles() {
+  particles = [];
+  for (let i = 0; i < 60; i++) {
+    particles.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 1.5 + 0.3,
+      alpha: Math.random() * 0.5 + 0.1,
+      gold: Math.random() > 0.5
+    });
+  }
+}
+
+// Streaming data lines
+const streams = [];
+for (let i = 0; i < 8; i++) {
+  streams.push({
+    x: Math.random() * 1400,
+    y: Math.random() * 900,
+    speed: Math.random() * 0.8 + 0.3,
+    chars: Array.from({length: 20}, () => Math.floor(Math.random() * 10)),
+    alpha: Math.random() * 0.15 + 0.05,
+    teal: Math.random() > 0.6
+  });
+}
+
+function drawFrame() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Dark radial gradient
+  const grad = ctx.createRadialGradient(W*0.5, H*0.3, 0, W*0.5, H*0.3, W*0.8);
+  grad.addColorStop(0, 'rgba(15,20,30,1)');
+  grad.addColorStop(1, 'rgba(5,7,9,1)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(212,175,55,0.04)';
+  ctx.lineWidth = 1;
+  const gapX = 80, gapY = 80;
+  for (let x = 0; x < W; x += gapX) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+  }
+  for (let y = 0; y < H; y += gapY) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+  }
+
+  // Diagonal accent line
+  ctx.strokeStyle = 'rgba(212,175,55,0.06)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, H * 0.6);
+  ctx.lineTo(W * 0.4, 0);
+  ctx.stroke();
+
+  // Particles
+  particles.forEach(p => {
+    p.x += p.vx; p.y += p.vy;
+    if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+    if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = p.gold
+      ? `rgba(212,175,55,${p.alpha})`
+      : `rgba(0,245,212,${p.alpha * 0.6})`;
+    ctx.fill();
+  });
+
+  // Data streams
+  ctx.font = '10px JetBrains Mono';
+  streams.forEach(s => {
+    s.y += s.speed;
+    if (s.y > H + 200) { s.y = -200; s.x = Math.random() * W; }
+    s.chars.forEach((c, i) => {
+      const alpha = (1 - i / s.chars.length) * s.alpha;
+      ctx.fillStyle = s.teal
+        ? `rgba(0,245,212,${alpha})`
+        : `rgba(212,175,55,${alpha})`;
+      ctx.fillText(c, s.x, s.y - i * 14);
+    });
+  });
+
+  // Center glow
+  const cg = ctx.createRadialGradient(W/2, H*0.35, 0, W/2, H*0.35, 300);
+  cg.addColorStop(0, 'rgba(212,175,55,0.04)');
+  cg.addColorStop(1, 'transparent');
+  ctx.fillStyle = cg;
+  ctx.fillRect(0, 0, W, H);
+
+  requestAnimationFrame(drawFrame);
+}
+
+resize();
+initParticles();
+drawFrame();
+window.addEventListener('resize', () => { resize(); initParticles(); });
+
+/* ── TICKER ──────────────────────────────── */
+const tickerItems = [
+  { sym: 'V10(1s)', val: '1854.23', chg: '+0.42%', up: true },
+  { sym: 'V25(1s)', val: '2341.07', chg: '+1.12%', up: true },
+  { sym: 'V50(1s)', val: '9812.54', chg: '-0.28%', up: false },
+  { sym: 'V75(1s)', val: '5634.88', chg: '+2.07%', up: true },
+  { sym: 'V100(1s)', val: '3210.45', chg: '-0.91%', up: false },
+  { sym: 'BOOM500', val: '7823.11', chg: '+0.65%', up: true },
+  { sym: 'BOOM1000', val: '4512.77', chg: '+0.33%', up: true },
+  { sym: 'CRASH500', val: '6124.38', chg: '-1.44%', up: false },
+  { sym: 'CRASH1000', val: '2987.62', chg: '-0.77%', up: false },
+  { sym: 'RANGE BREAK 100', val: '1203.44', chg: '+0.19%', up: true },
+  { sym: 'STEP INDEX', val: '853.29', chg: '+0.08%', up: true },
+  { sym: 'JUMP10', val: '4120.91', chg: '+3.21%', up: true },
+  { sym: 'JUMP25', val: '2841.05', chg: '+1.88%', up: true },
+  { sym: 'JUMP50', val: '7653.34', chg: '-0.55%', up: false },
+];
+
+const track = document.getElementById('ticker-track');
+const buildTicker = (items) => items.map(t => `
+  <div class="ticker-item">
+    <span class="ticker-sym">${t.sym}</span>
+    <span class="ticker-val">${t.val}</span>
+    <span class="${t.up ? 'tick-up' : 'tick-dn'}">${t.chg}</span>
+  </div>`).join('');
+
+// Duplicate for seamless loop
+track.innerHTML = buildTicker(tickerItems) + buildTicker(tickerItems);
+
+// Subtle live flicker
+setInterval(() => {
+  const items = track.querySelectorAll('.ticker-val');
+  const idx = Math.floor(Math.random() * items.length);
+  const el = items[idx];
+  const cur = parseFloat(el.textContent);
+  const delta = (Math.random() - 0.5) * 2;
+  el.textContent = (cur + delta).toFixed(2);
+}, 1200);
+
+/* ── SCROLL REVEAL ───────────────────────── */
+const reveals = document.querySelectorAll('.reveal');
+const io = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 60);
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+reveals.forEach(r => io.observe(r));
+
+/* ── FILTER ──────────────────────────────── */
+const filterBtns = document.querySelectorAll('.filter-btn');
+const cards = document.querySelectorAll('.app-card');
+
+filterBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    filterBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.dataset.filter;
+    applyFilters(f, document.getElementById('search-input').value.trim().toLowerCase());
+  });
+});
+
+document.getElementById('search-input').addEventListener('input', (e) => {
+  const active = document.querySelector('.filter-btn.active');
+  const f = active ? active.dataset.filter : 'all';
+  applyFilters(f, e.target.value.trim().toLowerCase());
+});
+
+function applyFilters(tag, search) {
+  cards.forEach(card => {
+    const tags = (card.dataset.tags || '').split(' ');
+    const name = card.querySelector('.app-name')?.textContent.toLowerCase() || '';
+    const desc = card.querySelector('.card-desc')?.textContent.toLowerCase() || '';
+    const matchTag = tag === 'all' || tags.includes(tag);
+    const matchSearch = !search || name.includes(search) || desc.includes(search);
+    card.style.display = (matchTag && matchSearch) ? '' : 'none';
+  });
+}
+
+/* ── COUNTER ANIMATION ───────────────────── */
+function animCount(el, target, dur = 1500) {
+  let start = null;
+  const step = (ts) => {
+    if (!start) start = ts;
+    const p = Math.min((ts - start) / dur, 1);
+    el.textContent = Math.round(p * target);
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+const statNums = document.querySelectorAll('.stat-num');
+const statObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const el = e.target;
+      const raw = el.textContent;
+      const num = parseInt(raw);
+      if (!isNaN(num)) animCount(el, num);
+      statObs.unobserve(el);
+    }
+  });
+}, { threshold: 0.5 });
+statNums.forEach(n => statObs.observe(n));
+</script>
+</body>
+</html>
