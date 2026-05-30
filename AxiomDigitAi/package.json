@@ -1,0 +1,27 @@
+{
+  "name": "axiom-digit-ai",
+  "version": "2.0.0",
+  "description": "AXIOM DIGIT AI — Deriv Volatility Index Autonomous Trading Terminal",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "echo 'Static PWA — no build step required'",
+    "health": "curl -sf http://localhost:$PORT/health || exit 1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "compression": "^1.7.4",
+    "helmet": "^7.1.0",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "keywords": ["deriv", "trading", "pwa", "volatility", "digit", "ai"],
+  "author": "AXIOM Systems",
+  "license": "MIT"
+}

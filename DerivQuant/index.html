@@ -1,0 +1,2577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#040412">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="DerivAI Pro — Quantum Trading Terminal for Synthetic Indices">
+<title>DerivAI Pro</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+:root{
+  --bg0:#040412;--bg1:#07071a;--bg2:#0c0c22;
+  --glass:rgba(10,10,28,0.75);
+  --g:#00ff88;--b:#00c8ff;--p:#a855f7;--gold:#ffb800;
+  --r:#ff2244;--w:#ff8c00;
+  --t1:#dde8ff;--t2:#7080aa;
+  --bd:rgba(0,200,255,0.12);--bdh:rgba(0,200,255,0.38);
+  --glG:0 0 18px rgba(0,255,136,0.45);
+  --glB:0 0 18px rgba(0,200,255,0.35);
+  --glR:0 0 18px rgba(255,34,68,0.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{
+  background:var(--bg0);color:var(--t1);
+  font-family:'JetBrains Mono',monospace;
+  position:relative;
+}
+body::before{
+  content:'';position:fixed;inset:0;
+  background:linear-gradient(rgba(0,200,255,0.025) 1px,transparent 1px),
+             linear-gradient(90deg,rgba(0,200,255,0.025) 1px,transparent 1px);
+  background-size:36px 36px;pointer-events:none;z-index:0;
+}
+body::after{
+  content:'';position:fixed;inset:0;
+  background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px);
+  pointer-events:none;z-index:0;
+}
+/* ─── SCROLLING ─── */
+#app{position:fixed;inset:0;display:flex;flex-direction:column;z-index:1}
+#app-header{flex-shrink:0}
+#sections{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+#sections::-webkit-scrollbar{width:3px}
+#sections::-webkit-scrollbar-thumb{background:var(--bdh);border-radius:2px}
+.section{display:none;min-height:100%;padding:12px 12px 90px}
+.section.active{display:block}
+/* ─── HEADER ─── */
+#app-header{
+  background:rgba(4,4,18,0.96);border-bottom:1px solid var(--bd);
+  backdrop-filter:blur(20px);padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{
+  font-family:'Orbitron',monospace;font-weight:900;font-size:16px;
+  background:linear-gradient(135deg,var(--g),var(--b));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:2px;
+}
+.logo span{font-size:10px;display:block;color:var(--t2);letter-spacing:3px;-webkit-text-fill-color:var(--t2)}
+.header-right{display:flex;align-items:center;gap:10px}
+.conn-badge{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;font-size:10px;
+  border:1px solid var(--bd);background:rgba(0,0,0,0.3);
+}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--t2)}
+.sdot.conn{background:var(--g);box-shadow:var(--glG);animation:pulse 2s infinite}
+.sdot.dconn{background:var(--r)}
+.sdot.ing{background:var(--w);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* ─── BOTTOM NAV ─── */
+#bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:100;
+  background:rgba(4,4,18,0.97);border-top:1px solid var(--bd);
+  backdrop-filter:blur(20px);display:flex;justify-content:space-around;
+  padding:6px 0 max(6px,env(safe-area-inset-bottom));
+}
+.nb{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:5px 8px;border-radius:8px;cursor:pointer;
+  color:var(--t2);border:none;background:none;
+  font-family:'JetBrains Mono',monospace;font-size:8.5px;
+  letter-spacing:.5px;text-transform:uppercase;transition:all .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.nb svg{width:18px;height:18px;transition:all .2s}
+.nb.active{color:var(--g)}
+.nb.active svg{filter:drop-shadow(var(--glG))}
+/* ─── CARDS ─── */
+.card{
+  background:var(--glass);border:1px solid var(--bd);
+  border-radius:12px;backdrop-filter:blur(12px);
+  box-shadow:0 4px 24px rgba(0,0,0,.4),inset 0 1px 0 rgba(0,200,255,.06);
+}
+.card-glow{box-shadow:0 0 30px rgba(0,200,255,.07),inset 0 1px 0 rgba(0,200,255,.1)}
+.sec-title{
+  font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;
+  text-transform:uppercase;color:var(--b);margin-bottom:10px;
+  padding-bottom:6px;border-bottom:1px solid var(--bd);
+}
+/* ─── STATS ─── */
+.stat-val{font-family:'Orbitron',monospace;font-weight:700;font-size:20px}
+.stat-lbl{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--t2);margin-top:2px}
+/* ─── BUTTONS ─── */
+.btn{
+  font-family:'Orbitron',monospace;font-weight:700;font-size:11px;
+  letter-spacing:1.5px;padding:11px 20px;border-radius:8px;border:none;
+  cursor:pointer;text-transform:uppercase;transition:all .2s;
+}
+.btn-g{background:linear-gradient(135deg,#00ff88,#00b86b);color:#020a06}
+.btn-g:hover{box-shadow:var(--glG);transform:translateY(-1px)}
+.btn-r{background:linear-gradient(135deg,#ff2244,#c0001e);color:#fff}
+.btn-r:hover{box-shadow:var(--glR)}
+.btn-b{background:linear-gradient(135deg,#00c8ff,#0080cc);color:#020812}
+.btn-b:hover{box-shadow:var(--glB)}
+.btn-out{
+  background:transparent;border:1px solid var(--b);color:var(--b);
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  padding:9px 18px;border-radius:8px;cursor:pointer;transition:all .2s;
+}
+.btn-out:hover{background:rgba(0,200,255,.08)}
+.btn-xs{padding:6px 12px;font-size:10px}
+/* ─── INPUTS ─── */
+.fi{
+  background:rgba(0,0,0,.4);border:1px solid var(--bd);border-radius:8px;
+  color:var(--t1);font-family:'JetBrains Mono',monospace;font-size:12px;
+  padding:9px 12px;width:100%;transition:border-color .2s;
+}
+.fi:focus{outline:none;border-color:var(--b);box-shadow:0 0 10px rgba(0,200,255,.2)}
+.fs{
+  background:rgba(0,0,0,.4);border:1px solid var(--bd);border-radius:8px;
+  color:var(--t1);font-family:'JetBrains Mono',monospace;font-size:12px;
+  padding:9px 12px;width:100%;appearance:none;
+}
+.fl{font-size:10px;color:var(--t2);letter-spacing:.8px;margin-bottom:5px;text-transform:uppercase}
+/* ─── TOGGLE ─── */
+.tog{width:42px;height:22px;background:rgba(0,0,0,.4);border:1px solid var(--bd);
+  border-radius:11px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.tog.on{background:var(--g);border-color:var(--g)}
+.tog-k{position:absolute;top:2px;left:2px;width:16px;height:16px;
+  background:#fff;border-radius:50%;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.tog.on .tog-k{left:22px}
+/* ─── DIGIT BARS ─── */
+.dbar-t{background:rgba(0,0,0,.4);border-radius:3px;height:5px;width:100%;overflow:hidden}
+.dbar-f{height:100%;border-radius:3px;transition:width .5s ease}
+/* ─── HEATMAP ─── */
+.hm-cell{
+  border-radius:6px;padding:7px 3px;text-align:center;
+  font-family:'Orbitron',monospace;font-size:13px;font-weight:700;
+  transition:all .4s;cursor:default;
+}
+/* ─── CONFIDENCE ─── */
+.conf-ring{position:relative;width:90px;height:90px}
+.conf-ring svg{width:90px;height:90px;transform:rotate(-90deg)}
+.conf-ring circle{fill:none;stroke-width:8;stroke-linecap:round}
+.conf-center{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.conf-pct{font-family:'Orbitron',monospace;font-weight:700;font-size:18px}
+.conf-lbl{font-size:8px;letter-spacing:1px;color:var(--t2)}
+/* ─── TRADE LOG ─── */
+.tlog{
+  border-left:3px solid;padding:8px 10px;border-radius:0 8px 8px 0;
+  margin-bottom:5px;font-size:10px;background:rgba(0,0,0,.25);
+  animation:slid .25s ease;
+}
+@keyframes slid{from{transform:translateX(-6px);opacity:0}to{transform:none;opacity:1}}
+.tlog.win{border-color:var(--g)}
+.tlog.loss{border-color:var(--r)}
+.tlog.virtual{border-color:var(--b);opacity:.8}
+/* ─── NOTIF ─── */
+.notif{
+  position:fixed;top:64px;right:12px;z-index:999;
+  padding:9px 14px;border-radius:10px;font-size:11px;border:1px solid;
+  backdrop-filter:blur(20px);animation:slid2 .3s ease;max-width:260px;
+  line-height:1.4;
+}
+@keyframes slid2{from{transform:translateX(105%);opacity:0}to{transform:none;opacity:1}}
+.notif.ok{background:rgba(0,255,136,.1);border-color:var(--g);color:var(--g)}
+.notif.err{background:rgba(255,34,68,.1);border-color:var(--r);color:var(--r)}
+.notif.inf{background:rgba(0,200,255,.1);border-color:var(--b);color:var(--b)}
+/* ─── MODAL ─── */
+.modal-bg{
+  position:fixed;inset:0;z-index:200;background:rgba(4,4,18,.92);
+  backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;padding:16px;
+}
+.modal{
+  background:var(--bg1);border:1px solid var(--bdh);border-radius:16px;
+  width:100%;max-width:380px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 0 60px rgba(0,200,255,.15);
+}
+/* ─── TICKER ANIM ─── */
+@keyframes tick-in{from{transform:translateY(-8px);opacity:0}to{transform:none;opacity:1}}
+.t-anim{animation:tick-in .18s ease}
+/* ─── GRID HELPERS ─── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+/* ─── MISC ─── */
+.ng{color:var(--g);text-shadow:var(--glG)}
+.nb2{color:var(--b);text-shadow:var(--glB)}
+.nr{color:var(--r);text-shadow:var(--glR)}
+.nw{color:var(--w)}
+.dim{color:var(--t2)}
+.sep{height:1px;background:var(--bd);margin:12px 0}
+/* ─── PROGRESS ─── */
+.pbar{height:4px;background:rgba(0,0,0,.4);border-radius:2px;overflow:hidden}
+.pbar-f{height:100%;border-radius:2px;transition:width .5s}
+/* ─── BADGE ─── */
+.badge{
+  display:inline-block;padding:2px 8px;border-radius:12px;
+  font-size:9px;letter-spacing:.8px;text-transform:uppercase;border:1px solid;
+}
+.badge-g{border-color:var(--g);color:var(--g);background:rgba(0,255,136,.08)}
+.badge-r{border-color:var(--r);color:var(--r);background:rgba(255,34,68,.08)}
+.badge-b{border-color:var(--b);color:var(--b);background:rgba(0,200,255,.08)}
+.badge-w{border-color:var(--w);color:var(--w);background:rgba(255,140,0,.08)}
+.badge-p{border-color:var(--p);color:var(--p);background:rgba(168,85,247,.08)}
+/* ─── CANVAS CHART ─── */
+#priceCanvas{width:100%;border-radius:10px;display:block}
+/* ─── SETUP MODAL ─── */
+.setup-step{font-family:'Orbitron',monospace;font-size:22px;font-weight:900;
+  background:linear-gradient(135deg,var(--g),var(--b));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+</style>
+</head>
+<body>
+
+<!-- ████████ SETUP MODAL ████████ -->
+<div class="modal-bg" id="setupModal">
+  <div class="modal p-6">
+    <div class="text-center mb-5">
+      <div class="logo text-2xl mb-1">DERIVAI PRO</div>
+      <div class="dim text-xs tracking-widest">QUANTUM TRADING TERMINAL v3.0</div>
+    </div>
+    <div class="sep"></div>
+    <div class="sec-title">Connection Setup</div>
+    <div class="space-y-4">
+      <div>
+        <div class="fl">Deriv App ID</div>
+        <input class="fi" id="setupAppId" placeholder="e.g. 1089" value="1089">
+        <div class="dim text-xs mt-1">Get yours at app.deriv.com or use demo ID 1089</div>
+      </div>
+      <div>
+        <div class="fl">API Token (Optional — needed for live trading)</div>
+        <input class="fi" id="setupToken" type="password" placeholder="Your Deriv API token">
+        <div class="dim text-xs mt-1">Leave blank for analysis-only mode</div>
+      </div>
+      <div>
+        <div class="fl">Default Market</div>
+        <select class="fs" id="setupMarket">
+          <option value="R_10">Volatility 10</option>
+          <option value="R_25" selected>Volatility 25</option>
+          <option value="R_50">Volatility 50</option>
+          <option value="R_75">Volatility 75</option>
+          <option value="R_100">Volatility 100</option>
+          <option value="1HZ10V">Volatility 10 (1s)</option>
+          <option value="1HZ25V">Volatility 25 (1s)</option>
+          <option value="1HZ50V">Volatility 50 (1s)</option>
+          <option value="1HZ75V">Volatility 75 (1s)</option>
+          <option value="1HZ100V">Volatility 100 (1s)</option>
+          <option value="JD10">Jump 10</option>
+          <option value="JD25">Jump 25</option>
+          <option value="JD50">Jump 50</option>
+          <option value="JD75">Jump 75</option>
+          <option value="JD100">Jump 100</option>
+          <option value="RDBULL">Crash 1000</option>
+          <option value="RDBEAR">Boom 1000</option>
+          <option value="stpRNG">Step Index</option>
+        </select>
+      </div>
+      <div>
+        <div class="fl">Trade Mode</div>
+        <select class="fs" id="setupMode">
+          <option value="virtual">Virtual (Simulation)</option>
+          <option value="real">Real (Live)</option>
+        </select>
+      </div>
+    </div>
+    <div class="mt-5">
+      <button class="btn btn-g w-full" onclick="App.initFromSetup()">▶ LAUNCH TERMINAL</button>
+    </div>
+    <div class="dim text-xs text-center mt-3">Data is stored locally. Never shared.</div>
+  </div>
+</div>
+
+<!-- ████████ MAIN APP ████████ -->
+<div id="app">
+  <!-- ─── HEADER ─── -->
+  <div id="app-header">
+    <div>
+      <div class="logo">DERIVAI PRO</div>
+      <div class="logo"><span id="hMarketLabel">V25 · READY</span></div>
+    </div>
+    <div class="header-right">
+      <div class="text-right mr-1">
+        <div class="text-xs ng font-bold" id="hBalance">$0.00</div>
+        <div class="text-xs dim" id="hCurrency">USD</div>
+      </div>
+      <div class="conn-badge">
+        <span class="sdot" id="connDot"></span>
+        <span id="connLabel" style="font-size:9px">OFFLINE</span>
+      </div>
+      <button class="btn-out btn-xs" onclick="App.openSettings()">⚙</button>
+    </div>
+  </div>
+
+  <!-- ─── SECTIONS ─── -->
+  <div id="sections">
+
+    <!-- ══════════════ DASHBOARD ══════════════ -->
+    <div class="section active" id="sec-dashboard">
+      <!-- Live tick + AI signal -->
+      <div class="card card-glow p-3 mb-3">
+        <div class="flex justify-between items-start">
+          <div>
+            <div class="dim text-xs mb-1 tracking-widest">LIVE PRICE</div>
+            <div class="stat-val ng t-anim" id="d-price">—</div>
+            <div class="flex items-center gap-2 mt-1">
+              <span class="dim text-xs" id="d-spread">Tick #<span id="d-tickno">0</span></span>
+              <span class="badge" id="d-lastdigit-badge">D:—</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="dim text-xs mb-1 tracking-widest">AI SIGNAL</div>
+            <div class="stat-val" id="d-signal" style="font-size:16px">—</div>
+            <div class="mt-1">
+              <span class="badge" id="d-conf-badge">CONF: —%</span>
+            </div>
+          </div>
+        </div>
+        <!-- Mini confidence bar -->
+        <div class="pbar mt-3">
+          <div class="pbar-f bg-gradient-to-r from-green-400 to-blue-400" id="d-conf-bar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="g4 mb-3">
+        <div class="card p-3 text-center">
+          <div class="stat-val ng" style="font-size:18px" id="d-wins">0</div>
+          <div class="stat-lbl">Wins</div>
+        </div>
+        <div class="card p-3 text-center">
+          <div class="stat-val nr" style="font-size:18px" id="d-losses">0</div>
+          <div class="stat-lbl">Losses</div>
+        </div>
+        <div class="card p-3 text-center">
+          <div class="stat-val nb2" style="font-size:18px" id="d-winrate">0%</div>
+          <div class="stat-lbl">Rate</div>
+        </div>
+        <div class="card p-3 text-center">
+          <div class="stat-val" id="d-pnl" style="font-size:18px">$0</div>
+          <div class="stat-lbl">P&L</div>
+        </div>
+      </div>
+
+      <!-- Price canvas chart -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">PRICE STREAM</div>
+        <canvas id="priceCanvas" height="100"></canvas>
+      </div>
+
+      <!-- Even/Odd meter -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">EVEN/ODD DOMINANCE (Last <span id="d-eon">30</span> Digits)</div>
+        <div class="g2 gap-3">
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="ng">EVEN</span>
+              <span class="ng font-bold" id="d-evenpct">50%</span>
+            </div>
+            <div class="dbar-t"><div class="dbar-f" id="d-evenbar" style="width:50%;background:var(--g)"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="nb2">ODD</span>
+              <span class="nb2 font-bold" id="d-oddpct">50%</span>
+            </div>
+            <div class="dbar-t"><div class="dbar-f" id="d-oddbar" style="width:50%;background:var(--b)"></div></div>
+          </div>
+        </div>
+        <div class="mt-3 text-xs text-center dim">
+          Threshold: <span class="nb2" id="d-threshold">55%</span> · Signal: <span id="d-eo-signal" class="font-bold">BALANCED</span>
+        </div>
+      </div>
+
+      <!-- Quick controls -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">QUICK CONTROLS</div>
+        <div class="g2 gap-3 mb-3">
+          <div>
+            <div class="fl">Stake ($)</div>
+            <input class="fi" id="qStake" type="number" value="0.5" step="0.1" min="0.35">
+          </div>
+          <div>
+            <div class="fl">Market</div>
+            <select class="fs" id="qMarket" onchange="App.changeMarket(this.value)">
+              <option value="R_10">V10</option>
+              <option value="R_25" selected>V25</option>
+              <option value="R_50">V50</option>
+              <option value="R_75">V75</option>
+              <option value="R_100">V100</option>
+              <option value="JD10">J10</option>
+              <option value="JD25">J25</option>
+              <option value="JD50">J50</option>
+              <option value="1HZ10V">V10(1s)</option>
+              <option value="1HZ25V">V25(1s)</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-g flex-1" id="btnStart" onclick="App.startTrading()">▶ START</button>
+          <button class="btn btn-r flex-1" id="btnStop" onclick="App.stopTrading()" style="display:none">■ STOP</button>
+          <button class="btn btn-b btn-xs" onclick="App.manualTrade('DIGITEVEN')">EVEN</button>
+          <button class="btn btn-b btn-xs" onclick="App.manualTrade('DIGITODD')">ODD</button>
+        </div>
+      </div>
+
+      <!-- Session stats -->
+      <div class="card p-3">
+        <div class="sec-title">SESSION STATS</div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="dim">Run Count</span><span id="d-runcount">0</span></div>
+          <div class="flex justify-between"><span class="dim">Martingale Depth</span><span id="d-martdepth">0</span></div>
+          <div class="flex justify-between"><span class="dim">Current Stake</span><span id="d-curstake">$0.50</span></div>
+          <div class="flex justify-between"><span class="dim">Total Volume</span><span id="d-volume">$0.00</span></div>
+          <div class="flex justify-between"><span class="dim">Max Drawdown</span><span class="nr" id="d-drawdown">$0.00</span></div>
+          <div class="flex justify-between"><span class="dim">Mode</span><span class="nb2" id="d-trademode">VIRTUAL</span></div>
+          <div class="flex justify-between"><span class="dim">Strategy</span><span class="ng" id="d-activestrat">EvOd%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ DIGIT ANALYTICS ══════════════ -->
+    <div class="section" id="sec-digits">
+      <div class="card p-3 mb-3">
+        <div class="sec-title">DIGIT HEATMAP (Last <span id="dig-n">100</span> Digits)</div>
+        <div class="g4 gap-1 mb-2" id="dig-heatmap">
+          <!-- Populated by JS -->
+        </div>
+        <div class="flex gap-2 mt-2">
+          <button class="btn btn-out btn-xs flex-1" onclick="DigitEngine.setWindow(30)">30</button>
+          <button class="btn btn-out btn-xs flex-1" onclick="DigitEngine.setWindow(100)">100</button>
+          <button class="btn btn-out btn-xs flex-1" onclick="DigitEngine.setWindow(500)">500</button>
+          <button class="btn btn-out btn-xs flex-1" onclick="DigitEngine.setWindow(1000)">1000</button>
+          <button class="btn btn-out btn-xs flex-1" onclick="DigitEngine.setWindow(3000)">3000</button>
+        </div>
+      </div>
+
+      <!-- Frequency bars -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">FREQUENCY DISTRIBUTION</div>
+        <div id="dig-freqbars" class="space-y-2"></div>
+      </div>
+
+      <!-- Even/Odd analysis -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">EVEN / ODD ANALYSIS</div>
+        <div class="g2 gap-3 mb-3">
+          <div class="card p-3 text-center">
+            <div class="stat-val ng" id="dig-evenpct2">50%</div>
+            <div class="stat-lbl">Even %</div>
+            <div class="text-xs dim mt-1" id="dig-evencount">Count: 0</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="stat-val nb2" id="dig-oddpct2">50%</div>
+            <div class="stat-lbl">Odd %</div>
+            <div class="text-xs dim mt-1" id="dig-oddcount">Count: 0</div>
+          </div>
+        </div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="dim">Dominance</span><span id="dig-dom" class="font-bold">BALANCED</span></div>
+          <div class="flex justify-between"><span class="dim">Streak</span><span id="dig-streak">—</span></div>
+          <div class="flex justify-between"><span class="dim">Hot Digits</span><span class="ng" id="dig-hot">—</span></div>
+          <div class="flex justify-between"><span class="dim">Cold Digits</span><span class="nr" id="dig-cold">—</span></div>
+          <div class="flex justify-between"><span class="dim">Last 5 Digits</span><span id="dig-last5">—</span></div>
+        </div>
+      </div>
+
+      <!-- EvOd Strategy Signal -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">EVOD% STRATEGY SIGNAL</div>
+        <div class="text-center py-3">
+          <div class="stat-val" id="dig-evod-sig" style="font-size:24px">—</div>
+          <div class="dim text-xs mt-1" id="dig-evod-reason">Awaiting data...</div>
+        </div>
+        <div class="sep"></div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="dim">Strategy Mode</span><span id="dig-strat-mode" class="nb2">—</span></div>
+          <div class="flex justify-between"><span class="dim">Threshold</span><span id="dig-thresh">55%</span></div>
+          <div class="flex justify-between"><span class="dim">Digits Checked</span><span id="dig-checked">30</span></div>
+          <div class="flex justify-between"><span class="dim">Signal Strength</span>
+            <div class="pbar flex-1 ml-3" style="margin-top:3px">
+              <div class="pbar-f" id="dig-strength-bar" style="width:0%;background:var(--g)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tick sequence -->
+      <div class="card p-3">
+        <div class="sec-title">LAST 20 DIGIT SEQUENCE</div>
+        <div id="dig-sequence" class="flex flex-wrap gap-1 text-xs font-mono"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ AI CONTROL ══════════════ -->
+    <div class="section" id="sec-ai">
+      <!-- Confidence ring -->
+      <div class="card p-4 mb-3 text-center">
+        <div class="sec-title">AI CONFIDENCE ENGINE</div>
+        <div class="flex justify-center mb-3">
+          <div class="conf-ring">
+            <svg viewBox="0 0 90 90">
+              <circle cx="45" cy="45" r="36" stroke="rgba(0,200,255,0.12)"/>
+              <circle cx="45" cy="45" r="36" stroke="var(--g)" id="aiRingCircle"
+                stroke-dasharray="226" stroke-dashoffset="226"/>
+            </svg>
+            <div class="conf-center">
+              <div class="conf-pct ng" id="ai-conf-pct">0%</div>
+              <div class="conf-lbl">CONF</div>
+            </div>
+          </div>
+        </div>
+        <div class="stat-val" id="ai-decision" style="font-size:18px">STANDBY</div>
+        <div class="dim text-xs mt-1" id="ai-reason">Engine initializing...</div>
+      </div>
+
+      <!-- AI Mode -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">AI MODE</div>
+        <div class="flex gap-2 flex-wrap mb-3">
+          <button class="badge badge-b" id="aimode-conservative" onclick="AIEngine.setMode('conservative')">CONSERVATIVE</button>
+          <button class="badge badge-g" id="aimode-balanced" onclick="AIEngine.setMode('balanced')">BALANCED</button>
+          <button class="badge badge-w" id="aimode-aggressive" onclick="AIEngine.setMode('aggressive')">AGGRESSIVE</button>
+          <button class="badge badge-r" id="aimode-hyper" onclick="AIEngine.setMode('hyper')">HYPER</button>
+        </div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="dim">Confidence Threshold</span><span id="ai-thresh">60%</span></div>
+          <div class="flex justify-between"><span class="dim">Current Mode</span><span id="ai-curmode" class="nb2 uppercase">BALANCED</span></div>
+          <div class="flex justify-between"><span class="dim">Trades Blocked</span><span id="ai-blocked">0</span></div>
+          <div class="flex justify-between"><span class="dim">Trades Approved</span><span id="ai-approved">0</span></div>
+        </div>
+      </div>
+
+      <!-- Factor breakdown -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">CONFIDENCE FACTOR BREAKDOWN</div>
+        <div id="ai-factors" class="space-y-2 text-xs">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- Indicator panel -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">TECHNICAL INDICATORS</div>
+        <div id="ai-indicators" class="space-y-2 text-xs">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+
+      <!-- AI log -->
+      <div class="card p-3">
+        <div class="sec-title">AI DECISION LOG</div>
+        <div id="ai-log" class="space-y-1 text-xs" style="max-height:180px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════ STRATEGY ══════════════ -->
+    <div class="section" id="sec-strategy">
+
+      <!-- EvOd% Config -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">⚡ EVOD% STRATEGY (Primary)</div>
+        <div class="badge badge-g mb-3">STRATEGY FROM XML · DERIV DBOT</div>
+        <div class="space-y-3">
+          <div>
+            <div class="fl">Strategy Mode</div>
+            <select class="fs" id="evod-mode" onchange="EvOdStrategy.setMode(this.value)">
+              <option value="GT_EVEN">Even% > X → Trade EVEN (& vice versa)</option>
+              <option value="LT_EVEN">Even% &lt; X → Trade EVEN (& vice versa)</option>
+              <option value="GT_ODD">Even% > X → Trade ODD (contrarian)</option>
+              <option value="LT_ODD">Even% &lt; X → Trade ODD (contrarian)</option>
+            </select>
+          </div>
+          <div class="g2 gap-3">
+            <div>
+              <div class="fl">Digits to Check (N)</div>
+              <input class="fi" id="evod-n" type="number" value="30" min="5" max="3000">
+            </div>
+            <div>
+              <div class="fl">Threshold % (X)</div>
+              <input class="fi" id="evod-x" type="number" value="55" min="51" max="80">
+            </div>
+          </div>
+          <button class="btn btn-b btn-xs" onclick="EvOdStrategy.applyConfig()">APPLY CONFIG</button>
+        </div>
+      </div>
+
+      <!-- Rise/Fall Strategy -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">↕ RISE/FALL REVERSAL (Secondary)</div>
+        <div class="space-y-3">
+          <div>
+            <div class="fl">Consecutive Ticks for Trigger</div>
+            <select class="fs" id="rf-ticks">
+              <option value="3">3 consecutive ticks</option>
+              <option value="4">4 consecutive ticks</option>
+              <option value="5" selected>5 consecutive ticks</option>
+              <option value="6">6 consecutive ticks</option>
+              <option value="7">7 consecutive ticks</option>
+              <option value="8">8 consecutive ticks</option>
+            </select>
+          </div>
+          <div class="text-xs dim">
+            Logic: N consecutive FALL ticks → execute RISE contract<br>
+            N consecutive RISE ticks → execute FALL contract
+          </div>
+          <button class="btn btn-b btn-xs" onclick="RiseFallStrategy.applyConfig()">APPLY CONFIG</button>
+        </div>
+      </div>
+
+      <!-- AI Composite Strategy -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">🤖 AI COMPOSITE (Auto-Select)</div>
+        <div class="text-xs dim mb-3">AI dynamically selects the best strategy based on current market conditions and confidence scoring.</div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between items-center">
+            <span>EvOd% Strategy</span>
+            <div class="tog on" id="tog-evod" onclick="App.toggleStrategy('evod',this)"><div class="tog-k"></div></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span>Rise/Fall Reversal</span>
+            <div class="tog on" id="tog-rf" onclick="App.toggleStrategy('rf',this)"><div class="tog-k"></div></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span>AI Confidence Filter</span>
+            <div class="tog on" id="tog-aifilter" onclick="App.toggleStrategy('aifilter',this)"><div class="tog-k"></div></div>
+          </div>
+          <div class="flex justify-between items-center">
+            <span>Multi-Timeframe Confirm</span>
+            <div class="tog" id="tog-mtf" onclick="App.toggleStrategy('mtf',this)"><div class="tog-k"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active Strategy -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">ACTIVE STRATEGY SELECTOR</div>
+        <div class="flex gap-2">
+          <button class="btn btn-g flex-1 btn-xs" onclick="App.setActiveStrategy('evod')">EvOd%</button>
+          <button class="btn btn-out flex-1 btn-xs" onclick="App.setActiveStrategy('risfall')">Rise/Fall</button>
+          <button class="btn btn-out flex-1 btn-xs" onclick="App.setActiveStrategy('ai')">AI Auto</button>
+        </div>
+      </div>
+
+      <!-- Martingale Config -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">MARTINGALE ENGINE</div>
+        <div class="space-y-3">
+          <div class="flex justify-between items-center">
+            <span class="text-xs">Enable Martingale</span>
+            <div class="tog on" id="tog-mart" onclick="App.toggleMartingale(this)"><div class="tog-k"></div></div>
+          </div>
+          <div class="g2 gap-3">
+            <div>
+              <div class="fl">Multiplier</div>
+              <input class="fi" id="mart-mult" type="number" value="2" step="0.1" min="1.1" max="10">
+            </div>
+            <div>
+              <div class="fl">Max Depth</div>
+              <input class="fi" id="mart-maxdepth" type="number" value="6" min="1" max="12">
+            </div>
+          </div>
+          <button class="btn btn-b btn-xs" onclick="MartingaleEngine.applyConfig()">APPLY</button>
+        </div>
+      </div>
+
+      <!-- Trade Mode -->
+      <div class="card p-3">
+        <div class="sec-title">TRADE MODE</div>
+        <div class="g2 gap-3">
+          <button class="btn btn-b flex-1" onclick="App.setTradeMode('virtual')">📊 VIRTUAL</button>
+          <button class="btn btn-r flex-1" onclick="App.setTradeMode('real')">💹 REAL</button>
+        </div>
+        <div class="dim text-xs mt-2 text-center" id="trademode-label">Mode: VIRTUAL — No real funds used</div>
+      </div>
+    </div>
+
+    <!-- ══════════════ TRADE CENTER ══════════════ -->
+    <div class="section" id="sec-trade">
+
+      <!-- Risk Management -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">RISK MANAGEMENT</div>
+        <div class="space-y-3">
+          <div class="g2 gap-3">
+            <div>
+              <div class="fl">Stop Loss ($)</div>
+              <input class="fi" id="rm-stoploss" type="number" value="30" step="1" min="1">
+            </div>
+            <div>
+              <div class="fl">Take Profit (Wins)</div>
+              <input class="fi" id="rm-takeprofit" type="number" value="8" min="1" max="100">
+            </div>
+          </div>
+          <div class="g2 gap-3">
+            <div>
+              <div class="fl">Max Daily Loss ($)</div>
+              <input class="fi" id="rm-dailyloss" type="number" value="50" step="1">
+            </div>
+            <div>
+              <div class="fl">Max Consecutive Losses</div>
+              <input class="fi" id="rm-maxloss" type="number" value="8" min="1">
+            </div>
+          </div>
+          <button class="btn btn-b btn-xs" onclick="RiskManager.applyConfig()">APPLY RISK RULES</button>
+        </div>
+      </div>
+
+      <!-- Risk status -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">RISK STATUS</div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between">
+            <span class="dim">Session P&L</span>
+            <span id="rm-pnl">$0.00</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="dim">Daily Loss Used</span>
+            <div class="flex-1 pbar ml-3 mt-1">
+              <div class="pbar-f" id="rm-daily-bar" style="width:0%;background:var(--r)"></div>
+            </div>
+          </div>
+          <div class="flex justify-between">
+            <span class="dim">Stop Loss Used</span>
+            <div class="flex-1 pbar ml-3 mt-1">
+              <div class="pbar-f" id="rm-sl-bar" style="width:0%;background:var(--r)"></div>
+            </div>
+          </div>
+          <div class="flex justify-between">
+            <span class="dim">Take Profit Progress</span>
+            <div class="flex-1 pbar ml-3 mt-1">
+              <div class="pbar-f" id="rm-tp-bar" style="width:0%;background:var(--g)"></div>
+            </div>
+          </div>
+          <div class="flex justify-between"><span class="dim">Consecutive Losses</span><span id="rm-consloss" class="nr">0</span></div>
+          <div class="flex justify-between"><span class="dim">Risk Status</span><span id="rm-status" class="ng">SAFE</span></div>
+        </div>
+      </div>
+
+      <!-- Manual Trade -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">MANUAL EXECUTION</div>
+        <div class="g2 gap-3 mb-3">
+          <div>
+            <div class="fl">Stake ($)</div>
+            <input class="fi" id="mt-stake" type="number" value="0.5" step="0.1" min="0.35">
+          </div>
+          <div>
+            <div class="fl">Duration (ticks)</div>
+            <input class="fi" id="mt-duration" type="number" value="1" min="1" max="10">
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <button class="btn btn-g flex-1" onclick="App.manualTrade('DIGITEVEN')">🟢 EVEN</button>
+          <button class="btn btn-b flex-1" onclick="App.manualTrade('DIGITODD')">🔵 ODD</button>
+          <button class="btn btn-g flex-1" onclick="App.manualTrade('CALL')">↑ RISE</button>
+          <button class="btn btn-r flex-1" onclick="App.manualTrade('PUT')">↓ FALL</button>
+        </div>
+      </div>
+
+      <!-- Recent trades -->
+      <div class="card p-3">
+        <div class="flex justify-between items-center mb-2">
+          <div class="sec-title mb-0">RECENT TRADES</div>
+          <button class="btn-out btn-xs" onclick="TradeEngine.clearSession()">CLEAR</button>
+        </div>
+        <div id="trade-list" class="space-y-1" style="max-height:280px;overflow-y:auto"></div>
+        <div class="dim text-xs text-center mt-2" id="trade-empty">No trades yet</div>
+      </div>
+    </div>
+
+    <!-- ══════════════ LOGS ══════════════ -->
+    <div class="section" id="sec-logs">
+      <!-- Performance Analytics -->
+      <div class="card p-3 mb-3">
+        <div class="sec-title">PERFORMANCE ANALYTICS</div>
+        <div class="g2 gap-3 mb-3">
+          <div class="card p-3 text-center">
+            <div class="stat-val ng" id="log-winrate">0%</div>
+            <div class="stat-lbl">Win Rate</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="stat-val nb2" id="log-profitfactor">0.00</div>
+            <div class="stat-lbl">Profit Factor</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="stat-val" id="log-totalpnl">$0.00</div>
+            <div class="stat-lbl">Total P&L</div>
+          </div>
+          <div class="card p-3 text-center">
+            <div class="stat-val nb2" id="log-tradescount">0</div>
+            <div class="stat-lbl">Trades</div>
+          </div>
+        </div>
+        <div class="space-y-2 text-xs">
+          <div class="flex justify-between"><span class="dim">Best Win Streak</span><span id="log-beststreak" class="ng">0</span></div>
+          <div class="flex justify-between"><span class="dim">Max Drawdown</span><span id="log-maxdd" class="nr">$0.00</span></div>
+          <div class="flex justify-between"><span class="dim">Avg Stake</span><span id="log-avgstake">$0.00</span></div>
+          <div class="flex justify-between"><span class="dim">EvOd Accuracy</span><span id="log-evod-acc" class="ng">—</span></div>
+        </div>
+      </div>
+
+      <!-- System Log -->
+      <div class="card p-3 mb-3">
+        <div class="flex justify-between items-center mb-2">
+          <div class="sec-title mb-0">SYSTEM LOG</div>
+          <button class="btn-out btn-xs" onclick="Logger.clearSystemLog()">CLEAR</button>
+        </div>
+        <div id="sys-log" class="space-y-1 text-xs" style="max-height:200px;overflow-y:auto;font-family:'JetBrains Mono',monospace"></div>
+      </div>
+
+      <!-- Trade history -->
+      <div class="card p-3 mb-3">
+        <div class="flex justify-between items-center mb-2">
+          <div class="sec-title mb-0">TRADE HISTORY (IndexedDB)</div>
+          <button class="btn-out btn-xs" onclick="Logger.exportCSV()">CSV ↓</button>
+        </div>
+        <div id="trade-history" class="space-y-1 text-xs" style="max-height:250px;overflow-y:auto"></div>
+      </div>
+
+      <!-- Reset Controls -->
+      <div class="card p-3">
+        <div class="sec-title">RESET CONTROLS</div>
+        <div class="flex flex-wrap gap-2">
+          <button class="btn btn-out btn-xs" onclick="App.softReset()">SOFT RESET</button>
+          <button class="btn btn-out btn-xs" onclick="App.resetMartingale()">MART RESET</button>
+          <button class="btn btn-out btn-xs" onclick="App.resetStrategy()">STRAT RESET</button>
+          <button class="btn btn-r btn-xs" onclick="App.hardReset()">HARD RESET</button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /sections -->
+</div><!-- /app -->
+
+<!-- ─── BOTTOM NAV ─── -->
+<nav id="bottom-nav">
+  <button class="nb active" id="nav-dashboard" onclick="App.nav('dashboard')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    DASH
+  </button>
+  <button class="nb" id="nav-digits" onclick="App.nav('digits')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="9" cy="9" r="2"/><circle cx="15" cy="9" r="2"/><circle cx="9" cy="15" r="2"/><circle cx="15" cy="15" r="2"/><circle cx="9" cy="21" r="2"/><circle cx="15" cy="21" r="2"/></svg>
+    DIGITS
+  </button>
+  <button class="nb" id="nav-ai" onclick="App.nav('ai')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M12 2a4 4 0 014 4v2a4 4 0 01-8 0V6a4 4 0 014-4z"/><path d="M6 10a6 6 0 0012 0"/><path d="M12 16v6M8 22h8"/></svg>
+    AI
+  </button>
+  <button class="nb" id="nav-strategy" onclick="App.nav('strategy')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 6h18M3 12h12M3 18h8"/><circle cx="19" cy="12" r="3"/><circle cx="15" cy="18" r="3"/></svg>
+    STRAT
+  </button>
+  <button class="nb" id="nav-trade" onclick="App.nav('trade')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 17l4-8 4 5 4-3 4 6"/></svg>
+    TRADE
+  </button>
+  <button class="nb" id="nav-logs" onclick="App.nav('logs')">
+    <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+    LOGS
+  </button>
+</nav>
+
+<!-- Settings Modal -->
+<div class="modal-bg" id="settingsModal" style="display:none">
+  <div class="modal p-5">
+    <div class="flex justify-between items-center mb-4">
+      <div class="sec-title mb-0">SETTINGS</div>
+      <button class="btn-out btn-xs" onclick="document.getElementById('settingsModal').style.display='none'">✕</button>
+    </div>
+    <div class="space-y-3">
+      <div>
+        <div class="fl">App ID</div>
+        <input class="fi" id="cfg-appid" value="1089">
+      </div>
+      <div>
+        <div class="fl">API Token</div>
+        <input class="fi" id="cfg-token" type="password">
+      </div>
+      <div>
+        <div class="fl">Currency</div>
+        <select class="fs" id="cfg-currency">
+          <option value="USD">USD</option>
+          <option value="EUR">EUR</option>
+          <option value="GBP">GBP</option>
+          <option value="BTC">BTC</option>
+          <option value="ETH">ETH</option>
+        </select>
+      </div>
+    </div>
+    <div class="flex gap-2 mt-4">
+      <button class="btn btn-g flex-1" onclick="App.saveSettings()">SAVE & RECONNECT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ████████████████████ JAVASCRIPT ████████████████████ -->
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════
+   CONFIG & STATE
+══════════════════════════════════════════════ */
+const CFG = {
+  wsUrl: (appId) => `wss://ws.binaryws.com/websockets/v3?app_id=${appId}`,
+  historyCount: 3000,
+  pingInterval: 30000,
+  reconnectDelay: 3000,
+  maxReconnects: 99,
+  version: '3.0.0'
+};
+
+const STATE = {
+  appId: '1089',
+  token: '',
+  market: 'R_25',
+  currency: 'USD',
+  tradeMode: 'virtual',  // 'virtual' | 'real'
+  activeStrategy: 'evod', // 'evod' | 'risfall' | 'ai'
+  running: false,
+  connected: false,
+  authorized: false,
+  balance: 0,
+  tickCount: 0,
+  price: 0,
+  digits: [],         // all digits (up to 3000)
+  prices: [],         // raw prices
+  ticks: [],          // tick direction sequence (+1/-1)
+  session: {
+    wins: 0, losses: 0, runCount: 0,
+    pnl: 0, volume: 0, drawdown: 0,
+    consLosses: 0, bestStreak: 0, streak: 0,
+    martDepth: 0, blocked: 0, approved: 0,
+    dailyLoss: 0
+  },
+  evod: {
+    mode: 'GT_EVEN',  // GT_EVEN | LT_EVEN | GT_ODD | LT_ODD
+    n: 30,
+    threshold: 55,
+    active: true
+  },
+  riseFall: {
+    ticks: 5,
+    active: true
+  },
+  martingale: {
+    enabled: true,
+    multiplier: 2,
+    maxDepth: 6,
+    currentDepth: 0,
+    initialStake: 0.5,
+    currentStake: 0.5
+  },
+  risk: {
+    stopLoss: 30,
+    takeProfit: 8,
+    dailyLoss: 50,
+    maxConsLoss: 8
+  },
+  ai: {
+    mode: 'balanced',     // conservative|balanced|aggressive|hyper
+    threshold: 60,
+    confidence: 0,
+    decision: '',
+    blocked: 0,
+    approved: 0
+  },
+  straToggles: {
+    evod: true,
+    rf: true,
+    aifilter: true,
+    mtf: false
+  }
+};
+
+/* ══════════════════════════════════════════════
+   INDEXEDDB MANAGER
+══════════════════════════════════════════════ */
+const DB = (() => {
+  let db = null;
+  const DB_NAME = 'derivaipro';
+  const DB_VERSION = 1;
+  const STORE_TRADES = 'trades';
+  const STORE_SYSLOG = 'syslog';
+
+  async function open() {
+    return new Promise((res, rej) => {
+      const req = indexedDB.open(DB_NAME, DB_VERSION);
+      req.onupgradeneeded = (e) => {
+        const d = e.target.result;
+        if (!d.objectStoreNames.contains(STORE_TRADES)) {
+          const ts = d.createObjectStore(STORE_TRADES, { keyPath: 'id', autoIncrement: true });
+          ts.createIndex('ts', 'ts', { unique: false });
+          ts.createIndex('type', 'type', { unique: false });
+        }
+        if (!d.objectStoreNames.contains(STORE_SYSLOG)) {
+          d.createObjectStore(STORE_SYSLOG, { keyPath: 'id', autoIncrement: true });
+        }
+      };
+      req.onsuccess = (e) => { db = e.target.result; res(db); };
+      req.onerror = rej;
+    });
+  }
+
+  async function addTrade(trade) {
+    if (!db) return;
+    return new Promise((res, rej) => {
+      const tx = db.transaction(STORE_TRADES, 'readwrite');
+      tx.objectStore(STORE_TRADES).add({ ...trade, ts: Date.now() });
+      tx.oncomplete = res;
+      tx.onerror = rej;
+    });
+  }
+
+  async function getRecentTrades(limit = 200) {
+    if (!db) return [];
+    return new Promise((res) => {
+      const tx = db.transaction(STORE_TRADES, 'readonly');
+      const req = tx.objectStore(STORE_TRADES).getAll();
+      req.onsuccess = () => {
+        const all = req.result || [];
+        res(all.slice(-limit).reverse());
+      };
+    });
+  }
+
+  async function clearTrades() {
+    if (!db) return;
+    return new Promise((res) => {
+      const tx = db.transaction(STORE_TRADES, 'readwrite');
+      tx.objectStore(STORE_TRADES).clear();
+      tx.oncomplete = res;
+    });
+  }
+
+  async function addSysLog(msg) {
+    if (!db) return;
+    try {
+      const tx = db.transaction(STORE_SYSLOG, 'readwrite');
+      tx.objectStore(STORE_SYSLOG).add({ msg, ts: Date.now() });
+    } catch {}
+  }
+
+  return { open, addTrade, getRecentTrades, clearTrades, addSysLog };
+})();
+
+/* ══════════════════════════════════════════════
+   LOGGER
+══════════════════════════════════════════════ */
+const Logger = (() => {
+  const MAX_DISPLAY = 60;
+  let sysBuffer = [];
+
+  function log(msg, type = 'info') {
+    const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    const entry = `[${time}] ${msg}`;
+    sysBuffer.unshift({ text: entry, type });
+    if (sysBuffer.length > MAX_DISPLAY) sysBuffer.pop();
+    renderSysLog();
+    DB.addSysLog(entry);
+    console.log(`[DERIVAI] ${entry}`);
+  }
+
+  function renderSysLog() {
+    const el = document.getElementById('sys-log');
+    if (!el) return;
+    el.innerHTML = sysBuffer.map(e => {
+      const c = e.type === 'error' ? 'nr' : e.type === 'win' ? 'ng' : e.type === 'loss' ? 'nr' : 'dim';
+      return `<div class="${c}">${e.text}</div>`;
+    }).join('');
+  }
+
+  function clearSystemLog() {
+    sysBuffer = [];
+    const el = document.getElementById('sys-log');
+    if (el) el.innerHTML = '';
+    showNotif('System log cleared', 'inf');
+  }
+
+  async function exportCSV() {
+    const trades = await DB.getRecentTrades(5000);
+    if (!trades.length) { showNotif('No trade history', 'inf'); return; }
+    const headers = ['id','ts','strategy','type','stake','result','pnl','confidence','market','mode'];
+    const rows = trades.map(t => headers.map(h => t[h] ?? '').join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `derivai_trades_${Date.now()}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    showNotif('CSV exported!', 'ok');
+  }
+
+  return { log, clearSystemLog, exportCSV };
+})();
+
+/* ══════════════════════════════════════════════
+   NOTIFICATION
+══════════════════════════════════════════════ */
+function showNotif(msg, type = 'inf', dur = 3000) {
+  const n = document.createElement('div');
+  n.className = `notif ${type === 'ok' ? 'ok' : type === 'err' ? 'err' : 'inf'}`;
+  n.textContent = msg;
+  document.body.appendChild(n);
+  setTimeout(() => n.remove(), dur);
+}
+
+/* ══════════════════════════════════════════════
+   DERIV WEBSOCKET API
+══════════════════════════════════════════════ */
+const DerivAPI = (() => {
+  let ws = null;
+  let pingTimer = null;
+  let reconnectCount = 0;
+  let reconnectTimer = null;
+  let subId = null;
+  let balanceSubId = null;
+  const callbacks = {};
+  let reqId = 1;
+
+  function connect() {
+    disconnect();
+    setConnStatus('ing', 'CONNECTING');
+    try {
+      ws = new WebSocket(CFG.wsUrl(STATE.appId));
+      ws.onopen = onOpen;
+      ws.onmessage = onMsg;
+      ws.onclose = onClose;
+      ws.onerror = onError;
+    } catch (e) {
+      Logger.log(`WS Error: ${e.message}`, 'error');
+      scheduleReconnect();
+    }
+  }
+
+  function disconnect() {
+    if (pingTimer) { clearInterval(pingTimer); pingTimer = null; }
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    if (ws) {
+      try { ws.close(); } catch {}
+      ws = null;
+    }
+    STATE.connected = false;
+    STATE.authorized = false;
+  }
+
+  function onOpen() {
+    STATE.connected = true;
+    reconnectCount = 0;
+    setConnStatus('conn', 'CONNECTED');
+    Logger.log('WebSocket connected');
+    pingTimer = setInterval(ping, CFG.pingInterval);
+    if (STATE.token) authorize();
+    else subscribeMarket(STATE.market);
+  }
+
+  function onClose() {
+    STATE.connected = false;
+    STATE.authorized = false;
+    setConnStatus('dconn', 'OFFLINE');
+    Logger.log('WebSocket closed — reconnecting...', 'error');
+    scheduleReconnect();
+  }
+
+  function onError(e) {
+    Logger.log(`WS error: ${e.type}`, 'error');
+  }
+
+  function onMsg(e) {
+    let data;
+    try { data = JSON.parse(e.data); } catch { return; }
+    if (data.error) {
+      Logger.log(`API Error: ${data.error.message}`, 'error');
+      showNotif(data.error.message, 'err');
+      return;
+    }
+    if (data.msg_type === 'authorize') handleAuthorize(data);
+    else if (data.msg_type === 'tick') handleTick(data.tick);
+    else if (data.msg_type === 'history') handleHistory(data.history);
+    else if (data.msg_type === 'balance') handleBalance(data.balance);
+    else if (data.msg_type === 'buy') handleBuy(data);
+    else if (data.msg_type === 'proposal_open_contract') handleContract(data.proposal_open_contract);
+    else if (data.msg_type === 'pong') {}
+    // Resolve promise if req_id matches
+    if (data.req_id && callbacks[data.req_id]) {
+      callbacks[data.req_id](data);
+      delete callbacks[data.req_id];
+    }
+  }
+
+  function send(payload, cb) {
+    if (!ws || ws.readyState !== 1) return;
+    const id = reqId++;
+    payload.req_id = id;
+    if (cb) callbacks[id] = cb;
+    ws.send(JSON.stringify(payload));
+  }
+
+  function ping() { send({ ping: 1 }); }
+
+  function authorize() {
+    send({ authorize: STATE.token });
+  }
+
+  function handleAuthorize(data) {
+    STATE.authorized = true;
+    STATE.balance = data.authorize?.balance || 0;
+    STATE.currency = data.authorize?.currency || 'USD';
+    setConnStatus('conn', 'AUTH✓');
+    Logger.log(`Authorized: ${data.authorize?.loginid} | Balance: ${STATE.balance}`);
+    UI.updateBalance();
+    subscribeMarket(STATE.market);
+    subscribeBalance();
+  }
+
+  function subscribeMarket(symbol) {
+    // Get history first
+    send({
+      ticks_history: symbol,
+      count: CFG.historyCount,
+      end: 'latest',
+      style: 'ticks',
+      subscribe: 1
+    });
+    Logger.log(`Subscribed to ${symbol}`);
+  }
+
+  function subscribeBalance() {
+    send({ balance: 1, subscribe: 1 });
+  }
+
+  function handleTick(tick) {
+    if (!tick) return;
+    STATE.tickCount++;
+    const price = tick.quote;
+    const lastDigit = parseInt(tick.quote.toString().slice(-1));
+    STATE.price = price;
+    STATE.digits.push(lastDigit);
+    STATE.prices.push(price);
+    if (STATE.digits.length > CFG.historyCount) STATE.digits.shift();
+    if (STATE.prices.length > 500) STATE.prices.shift();
+    // Track tick direction
+    if (STATE.prices.length >= 2) {
+      const dir = price > STATE.prices[STATE.prices.length - 2] ? 1 : -1;
+      STATE.ticks.push(dir);
+      if (STATE.ticks.length > 200) STATE.ticks.shift();
+    }
+    DigitEngine.update();
+    TechEngine.update();
+    AIEngine.evaluate();
+    if (STATE.running) StrategyManager.evaluate();
+    UI.updateTick(price, lastDigit);
+    UI.updateChart(price);
+  }
+
+  function handleHistory(history) {
+    if (!history?.prices) return;
+    const prices = history.prices;
+    const digits = prices.map(p => parseInt(p.toString().slice(-1)));
+    STATE.digits = digits;
+    STATE.prices = prices.slice();
+    // Build tick directions
+    STATE.ticks = [];
+    for (let i = 1; i < prices.length; i++) {
+      STATE.ticks.push(prices[i] > prices[i-1] ? 1 : -1);
+    }
+    DigitEngine.update();
+    Logger.log(`History loaded: ${digits.length} digits`);
+  }
+
+  function handleBalance(balance) {
+    if (!balance) return;
+    STATE.balance = balance.balance;
+    STATE.currency = balance.currency;
+    UI.updateBalance();
+  }
+
+  function handleBuy(data) {
+    if (data.buy) {
+      Logger.log(`Contract bought: ${data.buy.contract_id}`, 'info');
+      // Subscribe to contract result
+      send({ proposal_open_contract: 1, contract_id: data.buy.contract_id, subscribe: 1 });
+    }
+  }
+
+  function handleContract(poc) {
+    if (!poc || !poc.is_sold) return;
+    const won = poc.profit > 0;
+    const profit = poc.profit || 0;
+    TradeEngine.recordResult(won, profit, poc.contract_type || '');
+  }
+
+  function scheduleReconnect() {
+    if (reconnectCount >= CFG.maxReconnects) return;
+    reconnectCount++;
+    const delay = Math.min(CFG.reconnectDelay * reconnectCount, 30000);
+    reconnectTimer = setTimeout(connect, delay);
+  }
+
+  function setConnStatus(state, label) {
+    const dot = document.getElementById('connDot');
+    const lbl = document.getElementById('connLabel');
+    if (dot) { dot.className = 'sdot ' + (state === 'conn' ? 'conn' : state === 'ing' ? 'ing' : 'dconn'); }
+    if (lbl) lbl.textContent = label;
+  }
+
+  function buyContract(params) {
+    if (STATE.tradeMode === 'virtual') {
+      TradeEngine.virtualTrade(params);
+      return;
+    }
+    if (!STATE.authorized) {
+      showNotif('Not authorized — enter API token', 'err');
+      return;
+    }
+    send({
+      buy: 1,
+      price: params.amount * 2,
+      parameters: {
+        amount: params.amount,
+        basis: 'stake',
+        contract_type: params.contract_type,
+        currency: STATE.currency,
+        duration: params.duration || 1,
+        duration_unit: params.duration_unit || 't',
+        symbol: STATE.market
+      }
+    });
+    Logger.log(`BUY: ${params.contract_type} | $${params.amount} | ${STATE.market}`);
+  }
+
+  return { connect, disconnect, send, buyContract, authorize };
+})();
+
+/* ══════════════════════════════════════════════
+   DIGIT ANALYSIS ENGINE
+══════════════════════════════════════════════ */
+const DigitEngine = (() => {
+  let window = 30;
+
+  function setWindow(n) {
+    window = n;
+    document.getElementById('dig-n').textContent = n;
+    update();
+    showNotif(`Digit window: ${n}`, 'inf');
+  }
+
+  function getSlice() {
+    return STATE.digits.slice(-window);
+  }
+
+  function getFrequency(digits) {
+    const freq = new Array(10).fill(0);
+    digits.forEach(d => freq[d]++);
+    return freq;
+  }
+
+  function getEvenOddPct(digits) {
+    if (!digits.length) return { evenPct: 50, oddPct: 50, evenCount: 0, oddCount: 0 };
+    const evenCount = digits.filter(d => d % 2 === 0).length;
+    const oddCount = digits.length - evenCount;
+    return {
+      evenPct: Math.round((evenCount / digits.length) * 100 * 10) / 10,
+      oddPct: Math.round((oddCount / digits.length) * 100 * 10) / 10,
+      evenCount, oddCount
+    };
+  }
+
+  function getStreak(digits) {
+    if (!digits.length) return { type: '', count: 0 };
+    const lastType = digits[digits.length - 1] % 2 === 0 ? 'E' : 'O';
+    let count = 0;
+    for (let i = digits.length - 1; i >= 0; i--) {
+      const t = digits[i] % 2 === 0 ? 'E' : 'O';
+      if (t === lastType) count++;
+      else break;
+    }
+    return { type: lastType, count };
+  }
+
+  function getHotCold(freq) {
+    const indexed = freq.map((f, d) => ({ d, f })).sort((a, b) => b.f - a.f);
+    const hot = indexed.slice(0, 3).map(x => x.d).join(', ');
+    const cold = indexed.slice(-3).map(x => x.d).join(', ');
+    return { hot, cold };
+  }
+
+  function update() {
+    const slice = getSlice();
+    if (!slice.length) return;
+    const freq = getFrequency(slice);
+    const { evenPct, oddPct, evenCount, oddCount } = getEvenOddPct(slice);
+    const streak = getStreak(slice);
+    const { hot, cold } = getHotCold(freq);
+    const last5 = slice.slice(-5).join(' ');
+
+    // Update digit section
+    _ui_updateHeatmap(freq, slice.length);
+    _ui_updateFreqBars(freq, slice.length);
+    _ui_updateEvenOdd(evenPct, oddPct, evenCount, oddCount, streak, hot, cold, last5);
+
+    // Update dashboard E/O meter
+    const evEl = document.getElementById('d-evenpct');
+    const odEl = document.getElementById('d-oddpct');
+    const evBar = document.getElementById('d-evenbar');
+    const odBar = document.getElementById('d-oddbar');
+    if (evEl) evEl.textContent = evenPct + '%';
+    if (odEl) odEl.textContent = oddPct + '%';
+    if (evBar) evBar.style.width = evenPct + '%';
+    if (odBar) odBar.style.width = oddPct + '%';
+
+    // Update sequence display
+    _ui_updateSequence(slice.slice(-20));
+  }
+
+  function _ui_updateHeatmap(freq, total) {
+    const el = document.getElementById('dig-heatmap');
+    if (!el) return;
+    const max = Math.max(...freq, 1);
+    el.innerHTML = freq.map((f, d) => {
+      const pct = total ? Math.round((f / total) * 100) : 10;
+      const intensity = f / max;
+      const isEven = d % 2 === 0;
+      const bg = isEven
+        ? `rgba(0,255,136,${0.1 + intensity * 0.55})`
+        : `rgba(0,200,255,${0.1 + intensity * 0.55})`;
+      const border = isEven ? 'rgba(0,255,136,0.3)' : 'rgba(0,200,255,0.3)';
+      return `<div class="hm-cell" style="background:${bg};border:1px solid ${border}">
+        <div>${d}</div>
+        <div style="font-size:8px;color:rgba(255,255,255,0.6)">${pct}%</div>
+      </div>`;
+    }).join('');
+    document.getElementById('dig-n').textContent = window;
+  }
+
+  function _ui_updateFreqBars(freq, total) {
+    const el = document.getElementById('dig-freqbars');
+    if (!el) return;
+    const max = Math.max(...freq, 1);
+    el.innerHTML = freq.map((f, d) => {
+      const pct = total ? Math.round((f / total) * 100) : 10;
+      const w = Math.round((f / max) * 100);
+      const col = d % 2 === 0 ? 'var(--g)' : 'var(--b)';
+      return `<div class="flex items-center gap-2">
+        <span style="width:12px;text-align:right;font-family:'Orbitron',monospace;font-size:11px">${d}</span>
+        <div class="dbar-t flex-1"><div class="dbar-f" style="width:${w}%;background:${col}"></div></div>
+        <span class="dim" style="width:32px;text-align:right">${pct}%</span>
+        <span style="width:24px;color:${col}">${f}</span>
+      </div>`;
+    }).join('');
+  }
+
+  function _ui_updateEvenOdd(evPct, odPct, evCnt, odCnt, streak, hot, cold, last5) {
+    const domEl = document.getElementById('dig-dom');
+    const dom = evPct > odPct ? 'EVEN' : evPct < odPct ? 'ODD' : 'BALANCED';
+    const domCol = evPct > odPct ? 'var(--g)' : evPct < odPct ? 'var(--b)' : 'var(--t2)';
+    if (domEl) { domEl.textContent = dom; domEl.style.color = domCol; }
+    _set('dig-evenpct2', evPct + '%');
+    _set('dig-oddpct2', odPct + '%');
+    _set('dig-evencount', `Count: ${evCnt}`);
+    _set('dig-oddcount', `Count: ${odCnt}`);
+    _set('dig-streak', `${streak.count} × ${streak.type === 'E' ? 'EVEN' : 'ODD'}`);
+    _set('dig-hot', hot);
+    _set('dig-cold', cold);
+    _set('dig-last5', last5);
+  }
+
+  function _ui_updateSequence(digits) {
+    const el = document.getElementById('dig-sequence');
+    if (!el) return;
+    el.innerHTML = digits.map((d, i) => {
+      const isEven = d % 2 === 0;
+      const isLast = i === digits.length - 1;
+      const bg = isEven ? 'rgba(0,255,136,0.15)' : 'rgba(0,200,255,0.15)';
+      const border = isEven ? 'rgba(0,255,136,0.5)' : 'rgba(0,200,255,0.5)';
+      const ring = isLast ? ';box-shadow:0 0 8px rgba(255,184,0,0.8);border-color:var(--gold)' : '';
+      return `<span style="display:inline-block;width:24px;height:24px;line-height:24px;text-align:center;border-radius:4px;background:${bg};border:1px solid ${border}${ring};font-family:'Orbitron',monospace;font-size:11px">${d}</span>`;
+    }).join('');
+  }
+
+  function getEvenOddForN(n) {
+    const slice = STATE.digits.slice(-n);
+    return getEvenOddPct(slice);
+  }
+
+  return { update, setWindow, getEvenOddForN, getFrequency, getSlice, getEvenOddPct };
+})();
+
+/* ══════════════════════════════════════════════
+   TECHNICAL ANALYSIS ENGINE
+══════════════════════════════════════════════ */
+const TechEngine = (() => {
+  let indicators = {};
+
+  function ema(prices, period) {
+    if (prices.length < period) return null;
+    const k = 2 / (period + 1);
+    let ema = prices.slice(0, period).reduce((a, b) => a + b, 0) / period;
+    for (let i = period; i < prices.length; i++) ema = prices[i] * k + ema * (1 - k);
+    return ema;
+  }
+
+  function rsi(prices, period = 14) {
+    if (prices.length < period + 1) return 50;
+    const deltas = prices.slice(-(period + 1)).map((p, i, a) => i > 0 ? p - a[i-1] : 0).slice(1);
+    const gains = deltas.map(d => d > 0 ? d : 0);
+    const losses = deltas.map(d => d < 0 ? -d : 0);
+    const avgGain = gains.reduce((a, b) => a + b, 0) / period;
+    const avgLoss = losses.reduce((a, b) => a + b, 0) / period;
+    if (avgLoss === 0) return 100;
+    const rs = avgGain / avgLoss;
+    return 100 - (100 / (1 + rs));
+  }
+
+  function macd(prices) {
+    if (prices.length < 26) return { macd: 0, signal: 0, hist: 0 };
+    const ema12 = ema(prices, 12);
+    const ema26 = ema(prices, 26);
+    const macdLine = ema12 - ema26;
+    // Simplified signal (9-period EMA of MACD)
+    const signalLine = macdLine * 0.2; // Approximate
+    return { macd: macdLine, signal: signalLine, hist: macdLine - signalLine };
+  }
+
+  function bollingerBands(prices, period = 20, mult = 2) {
+    if (prices.length < period) return null;
+    const slice = prices.slice(-period);
+    const mean = slice.reduce((a, b) => a + b, 0) / period;
+    const variance = slice.map(p => Math.pow(p - mean, 2)).reduce((a, b) => a + b, 0) / period;
+    const std = Math.sqrt(variance);
+    return { upper: mean + mult * std, middle: mean, lower: mean - mult * std, std };
+  }
+
+  function atr(prices, period = 14) {
+    if (prices.length < period + 1) return null;
+    const slice = prices.slice(-(period + 1));
+    let sumTr = 0;
+    for (let i = 1; i < slice.length; i++) {
+      const tr = Math.abs(slice[i] - slice[i - 1]);
+      sumTr += tr;
+    }
+    return sumTr / period;
+  }
+
+  function stochastic(prices, kPeriod = 14, dPeriod = 3) {
+    if (prices.length < kPeriod) return { k: 50, d: 50 };
+    const slice = prices.slice(-kPeriod);
+    const high = Math.max(...slice);
+    const low = Math.min(...slice);
+    const k = high === low ? 50 : ((prices[prices.length - 1] - low) / (high - low)) * 100;
+    return { k, d: k }; // Simplified
+  }
+
+  function update() {
+    const prices = STATE.prices;
+    if (prices.length < 5) return;
+    indicators = {
+      rsi: rsi(prices, 14),
+      ema9: ema(prices, 9),
+      ema21: ema(prices, 21),
+      ema50: ema(prices, 50),
+      macd: macd(prices),
+      bb: bollingerBands(prices, 20),
+      atr: atr(prices, 14),
+      stoch: stochastic(prices, 14, 3),
+      price: prices[prices.length - 1]
+    };
+    _ui_updateIndicators();
+  }
+
+  function _ui_updateIndicators() {
+    const el = document.getElementById('ai-indicators');
+    if (!el) return;
+    const { rsi: r, ema9, ema21, macd: m, bb, atr: a, stoch, price } = indicators;
+    const rows = [
+      { label: 'RSI (14)', val: r ? r.toFixed(1) : '—', sig: r < 30 ? 'OVERSOLD' : r > 70 ? 'OVERBOUGHT' : 'NEUTRAL', col: r < 30 ? 'var(--g)' : r > 70 ? 'var(--r)' : 'var(--t2)' },
+      { label: 'EMA 9/21', val: ema9 && ema21 ? (ema9 > ema21 ? '↑ BULL' : '↓ BEAR') : '—', sig: '', col: ema9 && ema21 ? (ema9 > ema21 ? 'var(--g)' : 'var(--r)') : 'var(--t2)' },
+      { label: 'MACD Hist', val: m.hist.toFixed(6), sig: m.hist > 0 ? 'BULL' : 'BEAR', col: m.hist > 0 ? 'var(--g)' : 'var(--r)' },
+      { label: 'Stoch %K', val: stoch.k.toFixed(1), sig: stoch.k < 20 ? 'OVERSOLD' : stoch.k > 80 ? 'OVERBOUGHT' : 'NEUTRAL', col: stoch.k < 20 ? 'var(--g)' : stoch.k > 80 ? 'var(--r)' : 'var(--t2)' },
+      { label: 'BB Position', val: bb ? ((STATE.price - bb.lower) / (bb.upper - bb.lower) * 100).toFixed(0) + '%' : '—', sig: bb && STATE.price < bb.lower ? 'BELOW' : bb && STATE.price > bb.upper ? 'ABOVE' : 'INSIDE', col: 'var(--t2)' },
+      { label: 'ATR', val: a ? a.toFixed(6) : '—', sig: 'VOLATILITY', col: 'var(--b)' }
+    ];
+    el.innerHTML = rows.map(r => `
+      <div class="flex justify-between items-center">
+        <span class="dim">${r.label}</span>
+        <div class="flex gap-2 items-center">
+          <span style="color:${r.col}">${r.val}</span>
+          ${r.sig ? `<span class="badge" style="border-color:${r.col};color:${r.col};background:transparent;font-size:8px">${r.sig}</span>` : ''}
+        </div>
+      </div>`).join('');
+  }
+
+  function get() { return indicators; }
+
+  return { update, get, ema, rsi, bollingerBands, atr, stochastic };
+})();
+
+/* ══════════════════════════════════════════════
+   EVOD% STRATEGY  (From XML — Deriv DBot)
+   ─────────────────────────────────────────────
+   4 Strategy Modes:
+   GT_EVEN: evenPct > threshold → DIGITEVEN; oddPct > threshold → DIGITODD
+   LT_EVEN: evenPct < threshold → DIGITEVEN; oddPct < threshold → DIGITODD
+   GT_ODD:  evenPct > threshold → DIGITODD;  oddPct > threshold → DIGITEVEN (contrarian)
+   LT_ODD:  evenPct < threshold → DIGITODD;  oddPct < threshold → DIGITEVEN (contrarian)
+══════════════════════════════════════════════ */
+const EvOdStrategy = (() => {
+  function setMode(mode) {
+    STATE.evod.mode = mode;
+    Logger.log(`EvOd mode set: ${mode}`);
+    showNotif(`EvOd mode: ${mode}`, 'inf');
+  }
+
+  function applyConfig() {
+    STATE.evod.n = parseInt(document.getElementById('evod-n').value) || 30;
+    STATE.evod.threshold = parseFloat(document.getElementById('evod-x').value) || 55;
+    document.getElementById('d-eon').textContent = STATE.evod.n;
+    document.getElementById('d-threshold').textContent = STATE.evod.threshold + '%';
+    document.getElementById('dig-thresh').textContent = STATE.evod.threshold + '%';
+    document.getElementById('dig-checked').textContent = STATE.evod.n;
+    Logger.log(`EvOd config: N=${STATE.evod.n}, threshold=${STATE.evod.threshold}%`);
+    showNotif('EvOd config applied', 'ok');
+  }
+
+  function evaluate() {
+    const n = STATE.evod.n;
+    const threshold = STATE.evod.threshold;
+    const { evenPct, oddPct } = DigitEngine.getEvenOddForN(n);
+    const mode = STATE.evod.mode;
+    let signal = null;
+    let reason = '';
+    let strength = 0;
+
+    if (mode === 'GT_EVEN') {
+      if (evenPct > threshold) {
+        signal = 'DIGITEVEN';
+        reason = `Even% (${evenPct}%) > ${threshold}% threshold → EVEN`;
+        strength = Math.min(100, ((evenPct - threshold) / (100 - threshold)) * 100);
+      } else if (oddPct > threshold) {
+        signal = 'DIGITODD';
+        reason = `Odd% (${oddPct}%) > ${threshold}% threshold → ODD`;
+        strength = Math.min(100, ((oddPct - threshold) / (100 - threshold)) * 100);
+      } else {
+        reason = `Neither Even% (${evenPct}%) nor Odd% (${oddPct}%) exceeds ${threshold}%`;
+      }
+    } else if (mode === 'LT_EVEN') {
+      if (evenPct < threshold) {
+        signal = 'DIGITEVEN';
+        reason = `Even% (${evenPct}%) < ${threshold}% threshold → EVEN`;
+        strength = Math.min(100, ((threshold - evenPct) / threshold) * 100);
+      } else if (oddPct < threshold) {
+        signal = 'DIGITODD';
+        reason = `Odd% (${oddPct}%) < ${threshold}% threshold → ODD`;
+        strength = Math.min(100, ((threshold - oddPct) / threshold) * 100);
+      } else {
+        reason = `Neither Even% (${evenPct}%) nor Odd% (${oddPct}%) below ${threshold}%`;
+      }
+    } else if (mode === 'GT_ODD') {
+      // Contrarian: if even% high → trade ODD
+      if (evenPct > threshold) {
+        signal = 'DIGITODD';
+        reason = `Even% (${evenPct}%) > ${threshold}% → contrarian → ODD`;
+        strength = Math.min(100, ((evenPct - threshold) / (100 - threshold)) * 100);
+      } else if (oddPct > threshold) {
+        signal = 'DIGITEVEN';
+        reason = `Odd% (${oddPct}%) > ${threshold}% → contrarian → EVEN`;
+        strength = Math.min(100, ((oddPct - threshold) / (100 - threshold)) * 100);
+      } else {
+        reason = `Signal below contrarian threshold (${threshold}%)`;
+      }
+    } else if (mode === 'LT_ODD') {
+      // Contrarian: if even% low → trade ODD
+      if (evenPct < threshold) {
+        signal = 'DIGITODD';
+        reason = `Even% (${evenPct}%) < ${threshold}% → contrarian → ODD`;
+        strength = Math.min(100, ((threshold - evenPct) / threshold) * 100);
+      } else if (oddPct < threshold) {
+        signal = 'DIGITEVEN';
+        reason = `Odd% (${oddPct}%) < ${threshold}% → contrarian → EVEN`;
+        strength = Math.min(100, ((threshold - oddPct) / threshold) * 100);
+      } else {
+        reason = `Signal below contrarian threshold (${threshold}%)`;
+      }
+    }
+
+    // Update UI
+    const sigEl = document.getElementById('dig-evod-sig');
+    const reasonEl = document.getElementById('dig-evod-reason');
+    const modeEl = document.getElementById('dig-strat-mode');
+    const strengthBar = document.getElementById('dig-strength-bar');
+    const dSigEl = document.getElementById('d-eo-signal');
+
+    if (sigEl) {
+      sigEl.textContent = signal || 'NO SIGNAL';
+      sigEl.style.color = signal === 'DIGITEVEN' ? 'var(--g)' : signal === 'DIGITODD' ? 'var(--b)' : 'var(--t2)';
+    }
+    if (reasonEl) reasonEl.textContent = reason;
+    if (modeEl) modeEl.textContent = mode;
+    if (strengthBar) {
+      strengthBar.style.width = strength + '%';
+      strengthBar.style.background = signal ? 'var(--g)' : 'var(--t2)';
+    }
+    if (dSigEl) {
+      dSigEl.textContent = signal ? (signal === 'DIGITEVEN' ? '🟢 EVEN' : '🔵 ODD') : 'NO SIGNAL';
+      dSigEl.style.color = signal === 'DIGITEVEN' ? 'var(--g)' : signal === 'DIGITODD' ? 'var(--b)' : 'var(--t2)';
+    }
+
+    return { signal, reason, strength, evenPct, oddPct };
+  }
+
+  return { evaluate, setMode, applyConfig };
+})();
+
+/* ══════════════════════════════════════════════
+   RISE/FALL REVERSAL STRATEGY
+══════════════════════════════════════════════ */
+const RiseFallStrategy = (() => {
+  function applyConfig() {
+    STATE.riseFall.ticks = parseInt(document.getElementById('rf-ticks').value) || 5;
+    Logger.log(`Rise/Fall: ${STATE.riseFall.ticks} consecutive ticks trigger`);
+    showNotif(`Rise/Fall: ${STATE.riseFall.ticks} ticks`, 'inf');
+  }
+
+  function evaluate() {
+    const ticks = STATE.ticks;
+    const n = STATE.riseFall.ticks;
+    if (ticks.length < n) return null;
+    const recent = ticks.slice(-n);
+    const allRise = recent.every(t => t === 1);
+    const allFall = recent.every(t => t === -1);
+    if (allRise) return { signal: 'PUT', reason: `${n} consecutive RISE ticks → FALL reversal` };
+    if (allFall) return { signal: 'CALL', reason: `${n} consecutive FALL ticks → RISE reversal` };
+    return null;
+  }
+
+  return { evaluate, applyConfig };
+})();
+
+/* ══════════════════════════════════════════════
+   MARTINGALE ENGINE
+══════════════════════════════════════════════ */
+const MartingaleEngine = (() => {
+  function applyConfig() {
+    STATE.martingale.multiplier = parseFloat(document.getElementById('mart-mult').value) || 2;
+    STATE.martingale.maxDepth = parseInt(document.getElementById('mart-maxdepth').value) || 6;
+    Logger.log(`Martingale: x${STATE.martingale.multiplier} | maxDepth ${STATE.martingale.maxDepth}`);
+    showNotif('Martingale config applied', 'ok');
+  }
+
+  function onWin() {
+    STATE.martingale.currentDepth = 0;
+    STATE.martingale.currentStake = STATE.martingale.initialStake;
+    STATE.session.martDepth = 0;
+    UI.updateSession();
+  }
+
+  function onLoss() {
+    if (!STATE.martingale.enabled) {
+      STATE.martingale.currentStake = STATE.martingale.initialStake;
+      return;
+    }
+    if (STATE.martingale.currentDepth >= STATE.martingale.maxDepth) {
+      Logger.log('Max Martingale depth reached — resetting stake', 'error');
+      showNotif('Max Martingale depth hit!', 'err');
+      STATE.martingale.currentStake = STATE.martingale.initialStake;
+      STATE.martingale.currentDepth = 0;
+      return;
+    }
+    STATE.martingale.currentDepth++;
+    STATE.martingale.currentStake = parseFloat(
+      (STATE.martingale.currentStake * STATE.martingale.multiplier).toFixed(2)
+    );
+    STATE.session.martDepth = STATE.martingale.currentDepth;
+    Logger.log(`Martingale depth ${STATE.martingale.currentDepth}: stake → $${STATE.martingale.currentStake}`);
+    UI.updateSession();
+  }
+
+  function getStake() {
+    return Math.max(STATE.martingale.currentStake, 0.35);
+  }
+
+  function reset() {
+    STATE.martingale.currentDepth = 0;
+    STATE.martingale.currentStake = STATE.martingale.initialStake;
+    STATE.session.martDepth = 0;
+    UI.updateSession();
+  }
+
+  return { applyConfig, onWin, onLoss, getStake, reset };
+})();
+
+/* ══════════════════════════════════════════════
+   RISK MANAGER
+══════════════════════════════════════════════ */
+const RiskManager = (() => {
+  function applyConfig() {
+    STATE.risk.stopLoss = parseFloat(document.getElementById('rm-stoploss').value) || 30;
+    STATE.risk.takeProfit = parseInt(document.getElementById('rm-takeprofit').value) || 8;
+    STATE.risk.dailyLoss = parseFloat(document.getElementById('rm-dailyloss').value) || 50;
+    STATE.risk.maxConsLoss = parseInt(document.getElementById('rm-maxloss').value) || 8;
+    Logger.log(`Risk: SL=$${STATE.risk.stopLoss} | TP=${STATE.risk.takeProfit}wins | DL=$${STATE.risk.dailyLoss}`);
+    showNotif('Risk rules applied', 'ok');
+  }
+
+  function check() {
+    const s = STATE.session;
+    const r = STATE.risk;
+    // Stop loss check
+    if (s.pnl <= -r.stopLoss) {
+      Logger.log(`STOP LOSS triggered: P&L $${s.pnl.toFixed(2)}`, 'error');
+      showNotif('STOP LOSS HIT — Trading stopped', 'err', 5000);
+      return { stop: true, reason: 'STOP_LOSS' };
+    }
+    // Take profit check
+    if (s.runCount >= r.takeProfit) {
+      Logger.log(`TAKE PROFIT triggered: ${s.runCount} wins`, 'win');
+      showNotif(`TAKE PROFIT: ${s.runCount} wins!`, 'ok', 5000);
+      return { stop: true, reason: 'TAKE_PROFIT' };
+    }
+    // Daily loss check
+    if (s.dailyLoss >= r.dailyLoss) {
+      Logger.log(`DAILY LOSS LIMIT: $${s.dailyLoss.toFixed(2)}`, 'error');
+      showNotif('Daily loss limit reached', 'err', 5000);
+      return { stop: true, reason: 'DAILY_LIMIT' };
+    }
+    // Consecutive losses
+    if (s.consLosses >= r.maxConsLoss) {
+      Logger.log(`MAX CONSECUTIVE LOSSES: ${s.consLosses}`, 'error');
+      showNotif(`${s.consLosses} consecutive losses — cooling down`, 'err', 5000);
+      return { stop: true, reason: 'CONS_LOSS' };
+    }
+    return { stop: false };
+  }
+
+  function updateUI() {
+    const s = STATE.session;
+    const r = STATE.risk;
+    _set('rm-pnl', `$${s.pnl.toFixed(2)}`);
+    _set('rm-consloss', s.consLosses);
+    const slPct = Math.min(100, (Math.abs(Math.min(s.pnl, 0)) / r.stopLoss) * 100);
+    const tpPct = Math.min(100, (s.runCount / r.takeProfit) * 100);
+    const dlPct = Math.min(100, (s.dailyLoss / r.dailyLoss) * 100);
+    const slBar = document.getElementById('rm-sl-bar');
+    const tpBar = document.getElementById('rm-tp-bar');
+    const dlBar = document.getElementById('rm-daily-bar');
+    if (slBar) slBar.style.width = slPct + '%';
+    if (tpBar) tpBar.style.width = tpPct + '%';
+    if (dlBar) dlBar.style.width = dlPct + '%';
+    const statusEl = document.getElementById('rm-status');
+    if (statusEl) {
+      const { stop } = check();
+      statusEl.textContent = stop ? 'RISK LIMIT' : 'SAFE';
+      statusEl.style.color = stop ? 'var(--r)' : 'var(--g)';
+    }
+  }
+
+  return { applyConfig, check, updateUI };
+})();
+
+/* ══════════════════════════════════════════════
+   AI ENGINE
+══════════════════════════════════════════════ */
+const AIEngine = (() => {
+  const THRESHOLDS = { conservative: 75, balanced: 60, aggressive: 45, hyper: 30 };
+  const LABELS = { conservative: 'CONSERVATIVE', balanced: 'BALANCED', aggressive: 'AGGRESSIVE', hyper: 'HYPER' };
+
+  function setMode(mode) {
+    STATE.ai.mode = mode;
+    STATE.ai.threshold = THRESHOLDS[mode];
+    document.getElementById('ai-thresh').textContent = THRESHOLDS[mode] + '%';
+    document.getElementById('ai-curmode').textContent = LABELS[mode];
+    // Update badges
+    ['conservative','balanced','aggressive','hyper'].forEach(m => {
+      const el = document.getElementById(`aimode-${m}`);
+      if (!el) return;
+      el.className = `badge ${mode === m ? (m === 'conservative' ? 'badge-b' : m === 'balanced' ? 'badge-g' : m === 'aggressive' ? 'badge-w' : 'badge-r') : ''}`;
+      if (mode !== m) el.style.cssText = 'border-color:var(--bd);color:var(--t2)';
+      else el.style.cssText = '';
+    });
+    Logger.log(`AI mode: ${LABELS[mode]} (threshold: ${THRESHOLDS[mode]}%)`);
+    showNotif(`AI: ${LABELS[mode]}`, 'inf');
+  }
+
+  function evaluate() {
+    if (STATE.digits.length < 10) return;
+    const evodsig = EvOdStrategy.evaluate();
+    const inds = TechEngine.get();
+    const ticks = STATE.ticks;
+
+    // Factor 1: EvOd signal strength (0-30)
+    const evodfactor = evodsig.signal ? Math.min(30, evodsig.strength * 0.3) : 0;
+
+    // Factor 2: RSI alignment (0-20)
+    let rsifactor = 10; // neutral
+    if (inds.rsi !== undefined) {
+      if (evodsig.signal === 'DIGITEVEN') {
+        rsifactor = inds.rsi < 40 ? 20 : inds.rsi > 60 ? 5 : 12;
+      } else if (evodsig.signal === 'DIGITODD') {
+        rsifactor = inds.rsi > 60 ? 20 : inds.rsi < 40 ? 5 : 12;
+      } else {
+        rsifactor = 10;
+      }
+    }
+
+    // Factor 3: Trend alignment (0-20)
+    let trendfactor = 10;
+    if (inds.ema9 && inds.ema21) {
+      const bullish = inds.ema9 > inds.ema21;
+      trendfactor = 15;
+    }
+
+    // Factor 4: Streak analysis (0-15) — penalize long single-type streaks
+    const slice = STATE.digits.slice(-10);
+    const evens = slice.filter(d => d % 2 === 0).length;
+    const streakBalance = Math.abs(evens - 5); // 0=perfect, 5=all one type
+    const streakfactor = Math.max(0, 15 - streakBalance * 2.5);
+
+    // Factor 5: Volatility filter (0-15)
+    let volatfactor = 10;
+    if (inds.bb && inds.atr) {
+      const bbWidth = (inds.bb.upper - inds.bb.lower) / inds.bb.middle;
+      volatfactor = bbWidth > 0.001 && bbWidth < 0.05 ? 15 : 7;
+    }
+
+    const confidence = Math.min(100, Math.round(evodfactor + rsifactor + trendfactor + streakfactor + volatfactor));
+    STATE.ai.confidence = confidence;
+
+    // Determine decision
+    let decision = 'STANDBY';
+    let reason = 'Insufficient confidence';
+    if (evodsig.signal && confidence >= STATE.ai.threshold) {
+      decision = evodsig.signal;
+      reason = evodsig.reason;
+      STATE.ai.approved++;
+    } else if (!evodsig.signal) {
+      decision = 'NO SIGNAL';
+      reason = evodsig.reason || 'No EvOd signal';
+    } else {
+      decision = 'BLOCKED';
+      reason = `Confidence ${confidence}% < threshold ${STATE.ai.threshold}%`;
+      STATE.ai.blocked++;
+    }
+    STATE.ai.decision = decision;
+
+    // Update UI
+    _updateUI(confidence, decision, reason, { evodfactor, rsifactor, trendfactor, streakfactor, volatfactor });
+    _addAILog(confidence, decision);
+
+    return { confidence, decision, reason, signal: evodsig.signal, approved: decision === evodsig.signal && evodsig.signal };
+  }
+
+  function _updateUI(conf, decision, reason, factors) {
+    // Ring
+    const circle = document.getElementById('aiRingCircle');
+    if (circle) {
+      const circumference = 226;
+      const offset = circumference - (conf / 100) * circumference;
+      circle.style.strokeDashoffset = offset;
+      circle.style.stroke = conf >= 75 ? 'var(--g)' : conf >= 50 ? 'var(--b)' : conf >= 30 ? 'var(--w)' : 'var(--r)';
+    }
+    _set('ai-conf-pct', conf + '%');
+    const decEl = document.getElementById('ai-decision');
+    if (decEl) {
+      decEl.textContent = decision;
+      decEl.style.color = decision === 'DIGITEVEN' ? 'var(--g)' : decision === 'DIGITODD' ? 'var(--b)' : decision === 'BLOCKED' ? 'var(--r)' : 'var(--t2)';
+    }
+    _set('ai-reason', reason);
+    _set('d-conf-badge', `CONF: ${conf}%`);
+    const confBar = document.getElementById('d-conf-bar');
+    if (confBar) confBar.style.width = conf + '%';
+    const sigEl = document.getElementById('d-signal');
+    if (sigEl) {
+      sigEl.textContent = decision === 'DIGITEVEN' ? '🟢 EVEN' : decision === 'DIGITODD' ? '🔵 ODD' : decision;
+      sigEl.style.color = decision === 'DIGITEVEN' ? 'var(--g)' : decision === 'DIGITODD' ? 'var(--b)' : 'var(--t2)';
+    }
+    // Factors
+    const fEl = document.getElementById('ai-factors');
+    if (fEl) {
+      const fs = [
+        { name: 'EvOd Signal', val: factors.evodfactor, max: 30 },
+        { name: 'RSI Align', val: factors.rsifactor, max: 20 },
+        { name: 'Trend', val: factors.trendfactor, max: 20 },
+        { name: 'Streak Balance', val: factors.streakfactor, max: 15 },
+        { name: 'Volatility', val: factors.volatfactor, max: 15 }
+      ];
+      fEl.innerHTML = fs.map(f => {
+        const pct = Math.round((f.val / f.max) * 100);
+        const col = pct >= 75 ? 'var(--g)' : pct >= 50 ? 'var(--b)' : 'var(--w)';
+        return `<div>
+          <div class="flex justify-between mb-1"><span class="dim">${f.name}</span><span style="color:${col}">${f.val.toFixed(0)}/${f.max}</span></div>
+          <div class="pbar"><div class="pbar-f" style="width:${pct}%;background:${col}"></div></div>
+        </div>`;
+      }).join('');
+    }
+    _set('ai-blocked', STATE.ai.blocked);
+    _set('ai-approved', STATE.ai.approved);
+  }
+
+  function _addAILog(conf, decision) {
+    const logEl = document.getElementById('ai-log');
+    if (!logEl) return;
+    const time = new Date().toLocaleTimeString('en-GB', { hour12: false });
+    const col = decision === 'DIGITEVEN' ? 'var(--g)' : decision === 'DIGITODD' ? 'var(--b)' : decision === 'BLOCKED' ? 'var(--r)' : 'var(--t2)';
+    const entry = document.createElement('div');
+    entry.style.color = col;
+    entry.textContent = `[${time}] ${decision} | ${conf}%`;
+    logEl.insertBefore(entry, logEl.firstChild);
+    while (logEl.children.length > 40) logEl.removeChild(logEl.lastChild);
+  }
+
+  function isApproved() {
+    return STATE.ai.confidence >= STATE.ai.threshold && STATE.ai.decision !== 'BLOCKED' && STATE.ai.decision !== 'NO SIGNAL' && STATE.ai.decision !== 'STANDBY';
+  }
+
+  return { evaluate, setMode, isApproved };
+})();
+
+/* ══════════════════════════════════════════════
+   STRATEGY MANAGER
+══════════════════════════════════════════════ */
+const StrategyManager = (() => {
+  let lastTradeTime = 0;
+  const MIN_INTERVAL = 1200; // ms between trades
+
+  function evaluate() {
+    const now = Date.now();
+    if (now - lastTradeTime < MIN_INTERVAL) return;
+    const risk = RiskManager.check();
+    if (risk.stop) { App.stopTrading(); return; }
+    if (!STATE.straToggles.aifilter || AIEngine.isApproved()) {
+      let signal = null;
+      let strategy = '';
+
+      if (STATE.activeStrategy === 'evod' && STATE.straToggles.evod) {
+        const evod = EvOdStrategy.evaluate();
+        if (evod.signal) { signal = evod.signal; strategy = 'EvOd%'; }
+      } else if (STATE.activeStrategy === 'risfall' && STATE.straToggles.rf) {
+        const rf = RiseFallStrategy.evaluate();
+        if (rf) { signal = rf.signal; strategy = 'Rise/Fall'; }
+      } else if (STATE.activeStrategy === 'ai') {
+        // Try EvOd first, then Rise/Fall
+        const evod = EvOdStrategy.evaluate();
+        if (evod.signal && STATE.straToggles.evod) { signal = evod.signal; strategy = 'AI+EvOd'; }
+        else {
+          const rf = RiseFallStrategy.evaluate();
+          if (rf && STATE.straToggles.rf) { signal = rf.signal; strategy = 'AI+RF'; }
+        }
+      }
+
+      if (signal) {
+        lastTradeTime = now;
+        _execute(signal, strategy);
+      }
+    }
+  }
+
+  function _execute(contractType, strategy) {
+    const stake = MartingaleEngine.getStake();
+    Logger.log(`SIGNAL: ${contractType} | Strategy: ${strategy} | Stake: $${stake}`);
+    DerivAPI.buyContract({
+      contract_type: contractType,
+      amount: stake,
+      duration: 1,
+      duration_unit: 't'
+    });
+  }
+
+  return { evaluate };
+})();
+
+/* ══════════════════════════════════════════════
+   TRADE ENGINE
+══════════════════════════════════════════════ */
+const TradeEngine = (() => {
+  const trades = [];
+
+  function virtualTrade(params) {
+    const stake = params.amount;
+    // Simulate outcome using digit analysis
+    const lastDigit = STATE.digits[STATE.digits.length - 1];
+    const isEven = lastDigit % 2 === 0;
+    let won = false;
+    if (params.contract_type === 'DIGITEVEN') won = isEven;
+    else if (params.contract_type === 'DIGITODD') won = !isEven;
+    else if (params.contract_type === 'CALL') won = STATE.ticks[STATE.ticks.length - 1] === 1;
+    else if (params.contract_type === 'PUT') won = STATE.ticks[STATE.ticks.length - 1] === -1;
+    else won = Math.random() > 0.5;
+    const profit = won ? stake * 0.95 : -stake;
+    recordResult(won, profit, params.contract_type, true);
+  }
+
+  function recordResult(won, profit, contractType, isVirtual = false) {
+    const s = STATE.session;
+    if (won) {
+      s.wins++; s.runCount++; s.consLosses = 0; s.streak++;
+      if (s.streak > s.bestStreak) s.bestStreak = s.streak;
+      MartingaleEngine.onWin();
+    } else {
+      s.losses++; s.consLosses++; s.streak = 0;
+      MartingaleEngine.onLoss();
+    }
+    s.pnl += profit;
+    s.volume += MartingaleEngine.getStake();
+    s.drawdown = Math.min(s.drawdown, s.pnl);
+    if (!won) s.dailyLoss += Math.abs(profit);
+
+    // Create trade record
+    const trade = {
+      id: Date.now(),
+      type: contractType,
+      stake: MartingaleEngine.getStake(),
+      won, profit,
+      pnl: s.pnl,
+      market: STATE.market,
+      strategy: STATE.activeStrategy,
+      confidence: STATE.ai.confidence,
+      mode: isVirtual ? 'virtual' : 'real',
+      digit: STATE.digits[STATE.digits.length - 1],
+      ts: Date.now()
+    };
+    trades.unshift(trade);
+    if (trades.length > 500) trades.pop();
+    DB.addTrade(trade);
+
+    Logger.log(`${won ? '✓ WIN' : '✗ LOSS'}: ${contractType} | $${profit.toFixed(2)} | P&L: $${s.pnl.toFixed(2)}`, won ? 'win' : 'loss');
+    showNotif(`${won ? '✓ WIN' : '✗ LOSS'} ${contractType}: ${profit > 0 ? '+' : ''}$${profit.toFixed(2)}`, won ? 'ok' : 'err', 2500);
+
+    UI.updateSession();
+    UI.addTradeEntry(trade);
+    UI.updateAnalytics();
+    RiskManager.updateUI();
+    Logger.loadHistory();
+  }
+
+  function clearSession() {
+    trades.length = 0;
+    const el = document.getElementById('trade-list');
+    if (el) el.innerHTML = '';
+    document.getElementById('trade-empty').style.display = '';
+    showNotif('Session cleared', 'inf');
+  }
+
+  return { virtualTrade, recordResult, clearSession };
+})();
+
+/* ══════════════════════════════════════════════
+   CHART
+══════════════════════════════════════════════ */
+const Chart = (() => {
+  let prices = [];
+  const MAX = 60;
+  let canvas, ctx;
+
+  function init() {
+    canvas = document.getElementById('priceCanvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth || 340;
+    canvas.height = 100;
+  }
+
+  function push(price) {
+    prices.push(price);
+    if (prices.length > MAX) prices.shift();
+    draw();
+  }
+
+  function draw() {
+    if (!ctx || prices.length < 2) return;
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min || 0.0001;
+    const pad = 6;
+    const stepX = (w - pad * 2) / (prices.length - 1);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(0,200,255,0.06)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < 4; i++) {
+      const y = pad + (h - pad * 2) * (i / 4);
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(0,255,136,0.18)');
+    grad.addColorStop(1, 'rgba(0,255,136,0)');
+    ctx.beginPath();
+    prices.forEach((p, i) => {
+      const x = pad + i * stepX;
+      const y = pad + (1 - (p - min) / range) * (h - pad * 2);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.lineTo(pad + (prices.length - 1) * stepX, h);
+    ctx.lineTo(pad, h);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Line
+    ctx.beginPath();
+    ctx.strokeStyle = 'var(--g, #00ff88)';
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 6;
+    prices.forEach((p, i) => {
+      const x = pad + i * stepX;
+      const y = pad + (1 - (p - min) / range) * (h - pad * 2);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Last point dot
+    const lastX = pad + (prices.length - 1) * stepX;
+    const lastY = pad + (1 - (prices[prices.length - 1] - min) / range) * (h - pad * 2);
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#00ff88';
+    ctx.shadowColor = '#00ff88';
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+  }
+
+  return { init, push };
+})();
+
+/* ══════════════════════════════════════════════
+   UI CONTROLLER
+══════════════════════════════════════════════ */
+const UI = (() => {
+  function updateTick(price, lastDigit) {
+    _set('d-price', price.toFixed(4), true);
+    _set('d-tickno', STATE.tickCount);
+    const db = document.getElementById('d-lastdigit-badge');
+    if (db) {
+      const isEven = lastDigit % 2 === 0;
+      db.textContent = `D:${lastDigit} ${isEven ? 'E' : 'O'}`;
+      db.className = `badge ${isEven ? 'badge-g' : 'badge-b'}`;
+    }
+    Chart.push(price);
+    document.getElementById('hMarketLabel').textContent =
+      `${STATE.market} · ${price.toFixed(4)}`;
+  }
+
+  function updateBalance() {
+    document.getElementById('hBalance').textContent = `$${STATE.balance.toFixed(2)}`;
+    document.getElementById('hCurrency').textContent = STATE.currency;
+  }
+
+  function updateSession() {
+    const s = STATE.session;
+    _set('d-wins', s.wins);
+    _set('d-losses', s.losses);
+    const total = s.wins + s.losses;
+    const wr = total ? Math.round((s.wins / total) * 100) : 0;
+    _set('d-winrate', wr + '%');
+    const pnlEl = document.getElementById('d-pnl');
+    if (pnlEl) {
+      pnlEl.textContent = (s.pnl >= 0 ? '+' : '') + '$' + s.pnl.toFixed(2);
+      pnlEl.style.color = s.pnl >= 0 ? 'var(--g)' : 'var(--r)';
+    }
+    _set('d-runcount', s.runCount);
+    _set('d-martdepth', s.martDepth);
+    _set('d-curstake', '$' + MartingaleEngine.getStake().toFixed(2));
+    _set('d-volume', '$' + s.volume.toFixed(2));
+    const ddEl = document.getElementById('d-drawdown');
+    if (ddEl) { ddEl.textContent = '$' + Math.abs(s.drawdown).toFixed(2); }
+  }
+
+  function addTradeEntry(trade) {
+    const listEl = document.getElementById('trade-list');
+    const emptyEl = document.getElementById('trade-empty');
+    if (!listEl) return;
+    if (emptyEl) emptyEl.style.display = 'none';
+    const entry = document.createElement('div');
+    entry.className = `tlog ${trade.won ? 'win' : 'loss'} ${trade.mode === 'virtual' ? 'virtual' : ''}`;
+    const time = new Date(trade.ts).toLocaleTimeString('en-GB', { hour12: false });
+    entry.innerHTML = `
+      <div class="flex justify-between">
+        <span style="color:${trade.won ? 'var(--g)' : 'var(--r)'}">
+          ${trade.won ? '✓ WIN' : '✗ LOSS'} · ${trade.type}
+        </span>
+        <span>${trade.profit >= 0 ? '+' : ''}$${trade.profit.toFixed(2)}</span>
+      </div>
+      <div class="dim" style="margin-top:2px">${time} · $${trade.stake.toFixed(2)} · Digit:${trade.digit} · ${trade.mode.toUpperCase()}</div>
+    `;
+    listEl.insertBefore(entry, listEl.firstChild);
+    while (listEl.children.length > 30) listEl.removeChild(listEl.lastChild);
+  }
+
+  function updateAnalytics() {
+    const s = STATE.session;
+    const total = s.wins + s.losses;
+    const wr = total ? Math.round((s.wins / total) * 100) : 0;
+    _set('log-winrate', wr + '%');
+    _set('log-tradescount', total);
+    const pf = s.losses ? (s.wins / s.losses).toFixed(2) : '∞';
+    _set('log-profitfactor', pf);
+    const pnlEl = document.getElementById('log-totalpnl');
+    if (pnlEl) { pnlEl.textContent = (s.pnl >= 0 ? '+' : '') + '$' + s.pnl.toFixed(2); pnlEl.style.color = s.pnl >= 0 ? 'var(--g)' : 'var(--r)'; }
+    _set('log-beststreak', s.bestStreak);
+    _set('log-maxdd', '$' + Math.abs(s.drawdown).toFixed(2));
+    const vol = total ? (s.volume / total).toFixed(2) : '0.00';
+    _set('log-avgstake', '$' + vol);
+    _set('log-evod-acc', wr + '%');
+  }
+
+  async function loadHistory() {
+    const trades = await DB.getRecentTrades(50);
+    const el = document.getElementById('trade-history');
+    if (!el) return;
+    el.innerHTML = trades.map(t => {
+      const time = new Date(t.ts).toLocaleTimeString('en-GB', { hour12: false });
+      return `<div class="tlog ${t.won ? 'win' : 'loss'}">
+        <div class="flex justify-between">
+          <span style="color:${t.won ? 'var(--g)' : 'var(--r)'}">${t.won ? '✓ WIN' : '✗ LOSS'} · ${t.type}</span>
+          <span>${t.profit >= 0 ? '+' : ''}$${parseFloat(t.profit || 0).toFixed(2)}</span>
+        </div>
+        <div class="dim" style="margin-top:2px">${time} · D:${t.digit} · ${t.mode}</div>
+      </div>`;
+    }).join('') || '<div class="dim text-center">No history</div>';
+  }
+
+  return { updateTick, updateBalance, updateSession, addTradeEntry, updateAnalytics, loadHistory };
+})();
+
+/* ══════════════════════════════════════════════
+   HELPER
+══════════════════════════════════════════════ */
+function _set(id, val, animate = false) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (animate) {
+    el.classList.remove('t-anim');
+    void el.offsetWidth;
+    el.classList.add('t-anim');
+  }
+  el.textContent = val;
+}
+
+/* ══════════════════════════════════════════════
+   MAIN APP CONTROLLER
+══════════════════════════════════════════════ */
+const App = (() => {
+  function initFromSetup() {
+    STATE.appId = document.getElementById('setupAppId').value || '1089';
+    STATE.token = document.getElementById('setupToken').value || '';
+    STATE.market = document.getElementById('setupMarket').value || 'R_25';
+    STATE.tradeMode = document.getElementById('setupMode').value || 'virtual';
+    saveToStorage();
+    document.getElementById('setupModal').style.display = 'none';
+    _init();
+  }
+
+  function saveToStorage() {
+    localStorage.setItem('dap_appid', STATE.appId);
+    localStorage.setItem('dap_token', STATE.token);
+    localStorage.setItem('dap_market', STATE.market);
+    localStorage.setItem('dap_mode', STATE.tradeMode);
+    localStorage.setItem('dap_currency', STATE.currency);
+  }
+
+  function loadFromStorage() {
+    STATE.appId = localStorage.getItem('dap_appid') || STATE.appId;
+    STATE.token = localStorage.getItem('dap_token') || STATE.token;
+    STATE.market = localStorage.getItem('dap_market') || STATE.market;
+    STATE.tradeMode = localStorage.getItem('dap_mode') || STATE.tradeMode;
+  }
+
+  function _init() {
+    // Update quick controls
+    const qMarket = document.getElementById('qMarket');
+    if (qMarket) qMarket.value = STATE.market;
+    // Set trade mode display
+    setTradeMode(STATE.tradeMode, true);
+    // Update stake
+    STATE.martingale.initialStake = parseFloat(document.getElementById('qStake')?.value || 0.5);
+    STATE.martingale.currentStake = STATE.martingale.initialStake;
+    // Connect WebSocket
+    DerivAPI.connect();
+    Logger.log(`DerivAI Pro v${CFG.version} initialized`);
+    Logger.log(`Market: ${STATE.market} | Mode: ${STATE.tradeMode}`);
+    UI.updateSession();
+    Chart.init();
+    AI.setMode('balanced');
+  }
+
+  function nav(section) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nb').forEach(b => b.classList.remove('active'));
+    const sec = document.getElementById(`sec-${section}`);
+    const btn = document.getElementById(`nav-${section}`);
+    if (sec) sec.classList.add('active');
+    if (btn) btn.classList.add('active');
+    if (section === 'digits') DigitEngine.update();
+    if (section === 'logs') { UI.loadHistory(); }
+  }
+
+  function startTrading() {
+    if (!STATE.connected) { showNotif('Not connected to Deriv', 'err'); return; }
+    STATE.running = true;
+    STATE.martingale.initialStake = parseFloat(document.getElementById('qStake')?.value || 0.5);
+    STATE.martingale.currentStake = STATE.martingale.initialStake;
+    const stopBtn = document.getElementById('btnStop');
+    const startBtn = document.getElementById('btnStart');
+    if (stopBtn) stopBtn.style.display = '';
+    if (startBtn) startBtn.style.display = 'none';
+    Logger.log(`Trading STARTED | Strategy: ${STATE.activeStrategy} | Mode: ${STATE.tradeMode}`);
+    showNotif('Trading started!', 'ok');
+    RiskManager.applyConfig();
+  }
+
+  function stopTrading() {
+    STATE.running = false;
+    const stopBtn = document.getElementById('btnStop');
+    const startBtn = document.getElementById('btnStart');
+    if (stopBtn) stopBtn.style.display = 'none';
+    if (startBtn) startBtn.style.display = '';
+    Logger.log('Trading STOPPED');
+    showNotif('Trading stopped', 'inf');
+  }
+
+  function manualTrade(type) {
+    const stake = parseFloat(document.getElementById('mt-stake')?.value ||
+                             document.getElementById('qStake')?.value || 0.5);
+    const duration = parseInt(document.getElementById('mt-duration')?.value || 1);
+    Logger.log(`Manual trade: ${type} | $${stake}`);
+    DerivAPI.buyContract({ contract_type: type, amount: stake, duration, duration_unit: 't' });
+  }
+
+  function changeMarket(symbol) {
+    STATE.market = symbol;
+    STATE.digits = [];
+    STATE.prices = [];
+    STATE.ticks = [];
+    DerivAPI.connect();
+    Logger.log(`Market changed: ${symbol}`);
+    saveToStorage();
+  }
+
+  function setTradeMode(mode, silent = false) {
+    STATE.tradeMode = mode;
+    const lbl = document.getElementById('trademode-label');
+    _set('d-trademode', mode.toUpperCase());
+    if (lbl) lbl.textContent = mode === 'virtual'
+      ? 'Mode: VIRTUAL — No real funds used'
+      : '⚠ Mode: REAL — Real funds at risk!';
+    if (!silent) showNotif(`Trade mode: ${mode.toUpperCase()}`, mode === 'real' ? 'err' : 'inf');
+    saveToStorage();
+  }
+
+  function setActiveStrategy(strat) {
+    STATE.activeStrategy = strat;
+    _set('d-activestrat', strat === 'evod' ? 'EvOd%' : strat === 'risfall' ? 'Rise/Fall' : 'AI Auto');
+    showNotif(`Strategy: ${strat}`, 'inf');
+  }
+
+  function toggleStrategy(key, el) {
+    el.classList.toggle('on');
+    STATE.straToggles[key] = el.classList.contains('on');
+  }
+
+  function toggleMartingale(el) {
+    el.classList.toggle('on');
+    STATE.martingale.enabled = el.classList.contains('on');
+    showNotif(`Martingale: ${STATE.martingale.enabled ? 'ON' : 'OFF'}`, 'inf');
+  }
+
+  function openSettings() {
+    document.getElementById('cfg-appid').value = STATE.appId;
+    document.getElementById('cfg-token').value = STATE.token;
+    document.getElementById('cfg-currency').value = STATE.currency;
+    document.getElementById('settingsModal').style.display = 'flex';
+  }
+
+  function saveSettings() {
+    STATE.appId = document.getElementById('cfg-appid').value;
+    STATE.token = document.getElementById('cfg-token').value;
+    STATE.currency = document.getElementById('cfg-currency').value;
+    saveToStorage();
+    document.getElementById('settingsModal').style.display = 'none';
+    DerivAPI.connect();
+    showNotif('Settings saved — reconnecting', 'ok');
+  }
+
+  function softReset() {
+    STATE.session = { wins:0, losses:0, runCount:0, pnl:0, volume:0, drawdown:0, consLosses:0, bestStreak:0, streak:0, martDepth:0, blocked:0, approved:0, dailyLoss:0 };
+    MartingaleEngine.reset();
+    UI.updateSession();
+    showNotif('Soft reset complete', 'inf');
+  }
+
+  function resetMartingale() {
+    MartingaleEngine.reset();
+    showNotif('Martingale reset', 'inf');
+  }
+
+  function resetStrategy() {
+    STATE.session.runCount = 0;
+    showNotif('Strategy reset', 'inf');
+  }
+
+  async function hardReset() {
+    if (!confirm('Hard reset? This clears all trade history.')) return;
+    softReset();
+    await DB.clearTrades();
+    TradeEngine.clearSession();
+    showNotif('Hard reset complete', 'ok');
+  }
+
+  // Convenience alias
+  const AI = AIEngine;
+
+  async function boot() {
+    await DB.open();
+    loadFromStorage();
+    // If we have saved config, skip setup
+    if (localStorage.getItem('dap_appid')) {
+      document.getElementById('setupModal').style.display = 'none';
+      _init();
+    } else {
+      document.getElementById('setupModal').style.display = 'flex';
+    }
+    // Resize chart on window resize
+    window.addEventListener('resize', Chart.init);
+  }
+
+  return {
+    initFromSetup, nav, startTrading, stopTrading, manualTrade,
+    changeMarket, setTradeMode, setActiveStrategy, toggleStrategy,
+    toggleMartingale, openSettings, saveSettings,
+    softReset, resetMartingale, resetStrategy, hardReset, boot
+  };
+})();
+
+/* ══════════════════════════════════════════════
+   SERVICE WORKER REGISTRATION
+══════════════════════════════════════════════ */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(() => {
+    console.log('[DerivAI] Service Worker registered');
+  }).catch(() => {});
+}
+
+/* ══════════════════════════════════════════════
+   BOOT
+══════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  App.boot();
+});
+</script>
+</body>
+</html>

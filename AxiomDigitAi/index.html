@@ -1,0 +1,2497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#080c14"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="description" content="AXIOM DIGIT AI — Deriv Volatility Index Autonomous Trading Terminal"/>
+<title>AXIOM DIGIT AI</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@300;400;700&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config={theme:{extend:{colors:{gold:'#f59e0b',cyber:'#06d6a0',plasma:'#8b5cf6',danger:'#ef4444',success:'#10b981',warn:'#f59e0b',dark:'#080c14',panel:'rgba(255,255,255,0.04)'},fontFamily:{orb:['Orbitron','sans-serif'],mono:['JetBrains Mono','monospace'],raj:['Rajdhani','sans-serif']}}}};
+</script>
+<style>
+:root{--gold:#f59e0b;--cyber:#06d6a0;--plasma:#8b5cf6;--danger:#ef4444;--success:#10b981;--dark:#080c14;--panel:rgba(15,20,35,0.85);--border:rgba(245,158,11,0.18);--glow:0 0 20px rgba(245,158,11,0.25);}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{background:var(--dark);color:#e2e8f0;font-family:'Rajdhani',sans-serif;height:100%;overflow:hidden;-webkit-font-smoothing:antialiased;}
+body{display:flex;flex-direction:column;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--gold);border-radius:4px;}
+
+/* Top Bar */
+#topbar{flex-shrink:0;background:rgba(8,12,20,0.96);border-bottom:1px solid var(--border);backdrop-filter:blur(20px);z-index:50;padding:0 12px;height:56px;display:flex;align-items:center;justify-content:space-between;}
+.logo-text{font-family:'Orbitron',sans-serif;font-size:13px;font-weight:900;letter-spacing:3px;background:linear-gradient(135deg,#f59e0b,#fde68a,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.logo-sub{font-family:'Rajdhani';font-size:9px;letter-spacing:4px;color:rgba(245,158,11,0.6);margin-top:-4px;}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:#ef4444;transition:all 0.3s;box-shadow:0 0 6px #ef4444;}
+.conn-dot.live{background:var(--cyber);box-shadow:0 0 8px var(--cyber);}
+.conn-dot.warn{background:var(--gold);box-shadow:0 0 8px var(--gold);}
+
+/* Main */
+#main{flex:1;overflow:hidden;position:relative;}
+.section{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;padding:12px 12px 80px;display:none;}
+.section.active{display:block;}
+
+/* Bottom Nav */
+#bottomnav{flex-shrink:0;background:rgba(8,12,20,0.97);border-top:1px solid var(--border);backdrop-filter:blur(20px);display:flex;height:62px;z-index:50;padding-bottom:env(safe-area-inset-bottom);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;transition:all 0.2s;border:none;background:none;color:rgba(255,255,255,0.35);position:relative;}
+.nav-btn.active{color:var(--gold);}
+.nav-btn.active::before{content:'';position:absolute;top:0;left:15%;right:15%;height:2px;background:var(--gold);border-radius:0 0 4px 4px;box-shadow:0 0 8px var(--gold);}
+.nav-icon{font-size:18px;line-height:1;}
+.nav-label{font-family:'Rajdhani';font-size:9px;font-weight:600;letter-spacing:0.5px;}
+
+/* Cards / Panels */
+.card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;backdrop-filter:blur(12px);}
+.card-sm{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;backdrop-filter:blur(12px);}
+.card-title{font-family:'Orbitron';font-size:9px;font-weight:700;letter-spacing:2px;color:var(--gold);margin-bottom:10px;text-transform:uppercase;display:flex;align-items:center;gap:6px;}
+.card-title::before{content:'';width:3px;height:12px;background:var(--gold);border-radius:2px;box-shadow:0 0 6px var(--gold);}
+
+/* Stat boxes */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.stat-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:10px;}
+.stat-label{font-size:9px;font-weight:600;letter-spacing:1.5px;color:rgba(255,255,255,0.4);text-transform:uppercase;margin-bottom:4px;}
+.stat-val{font-family:'JetBrains Mono';font-size:16px;font-weight:700;color:#fff;}
+.stat-val.gold{color:var(--gold);text-shadow:0 0 10px rgba(245,158,11,0.5);}
+.stat-val.green{color:var(--success);text-shadow:0 0 10px rgba(16,185,129,0.4);}
+.stat-val.red{color:var(--danger);text-shadow:0 0 10px rgba(239,68,68,0.4);}
+.stat-val.cyan{color:var(--cyber);text-shadow:0 0 10px rgba(6,214,160,0.4);}
+
+/* Digit Heatmap */
+.digit-heatmap{display:grid;grid-template-columns:repeat(10,1fr);gap:4px;margin-bottom:10px;}
+.digit-cell{aspect-ratio:1;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:14px;font-weight:700;cursor:pointer;transition:all 0.3s;border:1px solid rgba(255,255,255,0.05);}
+.digit-cell .d-num{font-size:13px;}
+.digit-cell .d-pct{font-size:8px;font-family:'Rajdhani';color:rgba(255,255,255,0.6);margin-top:1px;}
+
+/* Tick stream */
+.tick-stream{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px;flex-direction:row-reverse;}
+.tick-chip{flex-shrink:0;width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:13px;font-weight:700;}
+.tick-chip.up{background:rgba(16,185,129,0.2);border:1px solid rgba(16,185,129,0.4);color:var(--success);}
+.tick-chip.dn{background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:var(--danger);}
+.tick-chip.eq{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);}
+
+/* AI Confidence Bar */
+.conf-bar-wrap{background:rgba(255,255,255,0.05);border-radius:8px;height:12px;overflow:hidden;margin:6px 0;}
+.conf-bar{height:100%;border-radius:8px;transition:width 0.5s ease;background:linear-gradient(90deg,#ef4444,#f59e0b,#10b981);}
+
+/* Buttons */
+.btn{border:none;border-radius:8px;font-family:'Rajdhani';font-weight:700;letter-spacing:1px;cursor:pointer;transition:all 0.2s;padding:10px 18px;font-size:13px;}
+.btn-gold{background:linear-gradient(135deg,#d97706,#f59e0b);color:#000;}
+.btn-gold:hover{box-shadow:0 0 20px rgba(245,158,11,0.5);transform:translateY(-1px);}
+.btn-gold:active{transform:translateY(0);}
+.btn-green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;}
+.btn-green:active{opacity:0.85;}
+.btn-red{background:linear-gradient(135deg,#b91c1c,#ef4444);color:#fff;}
+.btn-ghost{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);color:#e2e8f0;}
+.btn-ghost:hover{background:rgba(255,255,255,0.1);}
+.btn-sm{padding:7px 12px;font-size:11px;}
+.btn-full{width:100%;display:block;}
+.btn-group{display:flex;gap:6px;}
+
+/* Forms */
+.input-wrap{margin-bottom:10px;}
+.input-label{font-size:10px;letter-spacing:1.5px;color:rgba(255,255,255,0.45);text-transform:uppercase;margin-bottom:5px;display:block;}
+.input-field{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:10px 12px;color:#fff;font-family:'JetBrains Mono';font-size:13px;outline:none;transition:border 0.2s;}
+.input-field:focus{border-color:var(--gold);}
+.input-field::placeholder{color:rgba(255,255,255,0.2);}
+select.input-field{cursor:pointer;}
+select.input-field option{background:#0f1a2e;color:#e2e8f0;}
+
+/* Badge */
+.badge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.badge-gold{background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);color:var(--gold);}
+.badge-green{background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);color:var(--success);}
+.badge-red{background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);color:var(--danger);}
+.badge-cyan{background:rgba(6,214,160,0.15);border:1px solid rgba(6,214,160,0.4);color:var(--cyber);}
+.badge-purple{background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.4);color:var(--plasma);}
+
+/* Trade List */
+.trade-row{display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:5px;border-left:3px solid transparent;}
+.trade-row.win{border-left-color:var(--success);}
+.trade-row.loss{border-left-color:var(--danger);}
+.trade-row.pending{border-left-color:var(--gold);}
+
+/* Modal / Setup */
+#setup-modal{position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(10px);}
+.modal-box{background:#0d1321;border:1px solid var(--border);border-radius:16px;padding:24px;max-width:400px;width:100%;box-shadow:var(--glow);}
+.modal-title{font-family:'Orbitron';font-size:14px;letter-spacing:3px;color:var(--gold);margin-bottom:6px;text-align:center;}
+.modal-sub{font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:20px;line-height:1.6;}
+
+/* Toast */
+#toast-container{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;width:90%;max-width:360px;}
+.toast{background:rgba(15,22,40,0.96);border:1px solid var(--border);border-radius:10px;padding:10px 16px;font-size:12px;font-family:'Rajdhani';letter-spacing:0.5px;animation:toastIn 0.3s ease;text-align:center;backdrop-filter:blur(16px);}
+.toast.win{border-color:rgba(16,185,129,0.5);color:var(--success);}
+.toast.loss{border-color:rgba(239,68,68,0.5);color:var(--danger);}
+.toast.info{border-color:rgba(245,158,11,0.3);color:var(--gold);}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Chart Canvas */
+.chart-wrap{position:relative;border-radius:10px;overflow:hidden;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.05);}
+canvas.chart-canvas{display:block;width:100%;touch-action:none;}
+
+/* Live price */
+.live-price{font-family:'Orbitron';font-weight:900;font-size:28px;letter-spacing:2px;color:#fff;text-shadow:0 0 20px rgba(255,255,255,0.2);}
+.price-change{font-family:'JetBrains Mono';font-size:11px;}
+.price-change.up{color:var(--success);}
+.price-change.dn{color:var(--danger);}
+
+/* Strategy Card */
+.strat-card{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all 0.2s;}
+.strat-card.active-strat{border-color:var(--gold);background:rgba(245,158,11,0.06);}
+.strat-card:hover{border-color:rgba(245,158,11,0.4);}
+
+/* Progress Ring */
+.ring-wrap{display:flex;align-items:center;justify-content:center;position:relative;}
+.ring-val{position:absolute;font-family:'JetBrains Mono';font-weight:700;font-size:18px;}
+
+/* Glow pulse for active trade */
+@keyframes pulse-gold{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,0.4)}50%{box-shadow:0 0 0 8px rgba(245,158,11,0)}}
+.pulse-gold{animation:pulse-gold 1.5s infinite;}
+@keyframes pulse-green{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,0.4)}50%{box-shadow:0 0 0 8px rgba(16,185,129,0)}}
+.pulse-green{animation:pulse-green 1.5s infinite;}
+
+/* Log entry */
+.log-entry{display:flex;gap:8px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.04);align-items:flex-start;}
+.log-time{font-family:'JetBrains Mono';font-size:9px;color:rgba(255,255,255,0.3);flex-shrink:0;width:70px;padding-top:1px;}
+.log-msg{font-size:11px;line-height:1.5;}
+.log-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.log-dot.info{background:var(--gold);}
+.log-dot.success{background:var(--success);}
+.log-dot.error{background:var(--danger);}
+.log-dot.warn{background:var(--warn);}
+
+/* Toggle Switch */
+.toggle-wrap{display:flex;align-items:center;gap:8px;}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0;}
+.toggle input{opacity:0;width:0;height:0;position:absolute;}
+.toggle-slider{position:absolute;inset:0;background:rgba(255,255,255,0.1);border-radius:24px;cursor:pointer;transition:0.3s;border:1px solid rgba(255,255,255,0.12);}
+.toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:#fff;border-radius:50%;transition:0.3s;}
+.toggle input:checked + .toggle-slider{background:var(--gold);}
+.toggle input:checked + .toggle-slider::before{transform:translateX(20px);}
+
+/* Mode chips */
+.mode-row{display:flex;gap:6px;flex-wrap:wrap;}
+.mode-chip{padding:5px 12px;border-radius:20px;font-family:'Rajdhani';font-size:11px;font-weight:600;letter-spacing:0.5px;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.45);background:rgba(255,255,255,0.03);}
+.mode-chip.sel{border-color:var(--gold);color:var(--gold);background:rgba(245,158,11,0.08);}
+
+/* Chart bg gradient */
+#s-dashboard{background:radial-gradient(ellipse at 20% 0%,rgba(245,158,11,0.05) 0%,transparent 50%),radial-gradient(ellipse at 80% 100%,rgba(6,214,160,0.04) 0%,transparent 50%);}
+#s-trading{background:radial-gradient(ellipse at 50% 0%,rgba(139,92,246,0.05) 0%,transparent 60%);}
+
+/* Martingale depth indicator */
+.mart-depth{display:flex;gap:4px;align-items:center;}
+.mart-step{width:18px;height:6px;border-radius:2px;background:rgba(255,255,255,0.08);transition:all 0.3s;}
+.mart-step.active{background:var(--danger);}
+
+/* Scrollable list */
+.scroll-list{max-height:220px;overflow-y:auto;padding-right:4px;}
+
+/* AI Mode Selector */
+.ai-mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.ai-mode-card{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.07);background:rgba(255,255,255,0.03);cursor:pointer;transition:all 0.2s;text-align:center;}
+.ai-mode-card.sel-mode{border-color:var(--plasma);background:rgba(139,92,246,0.08);}
+.ai-mode-name{font-family:'Orbitron';font-size:9px;letter-spacing:1px;margin-bottom:4px;}
+.ai-mode-desc{font-size:10px;color:rgba(255,255,255,0.4);line-height:1.4;}
+
+/* Section fade in */
+.section.active{animation:secFade 0.2s ease;}
+@keyframes secFade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Indicator badge row */
+.ind-row{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
+.ind-pill{padding:3px 8px;border-radius:4px;font-family:'JetBrains Mono';font-size:9px;font-weight:700;}
+.ind-bull{background:rgba(16,185,129,0.15);color:var(--success);}
+.ind-bear{background:rgba(239,68,68,0.15);color:var(--danger);}
+.ind-neut{background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.4);}
+
+/* Scrollbar for sections */
+.section::-webkit-scrollbar{width:2px;}
+.section::-webkit-scrollbar-thumb{background:rgba(245,158,11,0.3);}
+
+/* digit bar chart */
+.digit-bar-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.digit-bar-label{font-family:'JetBrains Mono';font-size:11px;width:14px;flex-shrink:0;color:var(--gold);}
+.digit-bar-track{flex:1;height:20px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden;position:relative;}
+.digit-bar-fill{height:100%;border-radius:4px;transition:width 0.5s ease;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;}
+.digit-bar-pct{font-family:'JetBrains Mono';font-size:9px;font-weight:700;color:#000;}
+</style>
+</head>
+<body>
+
+<!-- ── SETUP MODAL ───────────────────────────────────────── -->
+<div id="setup-modal">
+  <div class="modal-box">
+    <div class="logo-text text-center" style="font-size:15px;letter-spacing:4px;margin-bottom:4px;">AXIOM DIGIT AI</div>
+    <div class="modal-title" style="font-size:11px;margin-top:0;">VOLATILITY INDEX TERMINAL</div>
+    <p class="modal-sub">Enter your Deriv API token to connect to live markets. Paper trading is available without a token.</p>
+    <div class="input-wrap">
+      <label class="input-label">Deriv API Token (OAuth)</label>
+      <input id="api-token-input" class="input-field" type="password" placeholder="Paste your token here..."/>
+    </div>
+    <div class="input-wrap">
+      <label class="input-label">App ID</label>
+      <input id="app-id-input" class="input-field" type="text" placeholder="1089" value="1089"/>
+    </div>
+    <div class="btn-group" style="margin-top:14px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="launchPaper()">📊 Paper Mode</button>
+      <button class="btn btn-gold" style="flex:1;" onclick="launchLive()">⚡ Connect Live</button>
+    </div>
+    <p style="font-size:9px;color:rgba(255,255,255,0.2);text-align:center;margin-top:12px;letter-spacing:0.5px;">Your token is stored locally and never transmitted to any third party.</p>
+  </div>
+</div>
+
+<!-- ── TOP BAR ───────────────────────────────────────────── -->
+<div id="topbar">
+  <div>
+    <div class="logo-text">AXIOM</div>
+    <div class="logo-sub">DIGIT AI TERMINAL</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;flex:1;justify-content:center;padding:0 8px;">
+    <select id="symbol-select" class="input-field" style="padding:5px 8px;font-size:11px;font-family:'Rajdhani';height:30px;border-radius:6px;max-width:150px;">
+      <option value="R_10">Volatility 10</option>
+      <option value="R_25" selected>Volatility 25</option>
+      <option value="R_50">Volatility 50</option>
+      <option value="R_75">Volatility 75</option>
+      <option value="R_100">Volatility 100</option>
+      <option value="1HZ10V">Vol 10 (1s)</option>
+      <option value="1HZ25V">Vol 25 (1s)</option>
+      <option value="1HZ50V">Vol 50 (1s)</option>
+      <option value="1HZ75V">Vol 75 (1s)</option>
+      <option value="1HZ100V">Vol 100 (1s)</option>
+      <option value="BOOM300N">Boom 300</option>
+      <option value="BOOM500">Boom 500</option>
+      <option value="BOOM1000">Boom 1000</option>
+      <option value="CRASH300N">Crash 300</option>
+      <option value="CRASH500">Crash 500</option>
+      <option value="CRASH1000">Crash 1000</option>
+      <option value="JD10">Jump 10</option>
+      <option value="JD25">Jump 25</option>
+      <option value="JD50">Jump 50</option>
+      <option value="JD75">Jump 75</option>
+      <option value="JD100">Jump 100</option>
+      <option value="STPIDX">Step Index</option>
+    </select>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="text-align:right;">
+      <div id="top-balance" style="font-family:'JetBrains Mono';font-size:12px;font-weight:700;color:var(--gold);">--</div>
+      <div id="top-mode" style="font-size:9px;color:rgba(255,255,255,0.35);letter-spacing:1px;">PAPER</div>
+    </div>
+    <div id="conn-dot" class="conn-dot" title="Disconnected"></div>
+  </div>
+</div>
+
+<!-- ── MAIN SECTIONS ──────────────────────────────────────── -->
+<div id="main">
+
+  <!-- DASHBOARD -->
+  <div id="s-dashboard" class="section active">
+    <!-- Live Price -->
+    <div class="card" style="text-align:center;padding:16px;">
+      <div class="card-title" style="justify-content:center;margin-bottom:8px;">LIVE MARKET</div>
+      <div id="live-price" class="live-price">0.00000</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px;">
+        <span id="price-change" class="price-change">±0.00000</span>
+        <span id="last-digit-badge" class="badge badge-gold" style="font-size:12px;padding:3px 12px;">—</span>
+        <span id="tick-direction" class="badge badge-cyan">WAIT</span>
+      </div>
+    </div>
+
+    <!-- Mini tick stream -->
+    <div class="card" style="padding:10px;">
+      <div class="card-title" style="margin-bottom:8px;">LAST DIGITS</div>
+      <div id="tick-stream" class="tick-stream" style="min-height:36px;"></div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stat-grid" style="margin-bottom:10px;">
+      <div class="stat-box">
+        <div class="stat-label">Session P&L</div>
+        <div id="dash-pnl" class="stat-val gold">0.00</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Win Rate</div>
+        <div id="dash-wr" class="stat-val cyan">0.0%</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Total Trades</div>
+        <div id="dash-trades" class="stat-val">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">AI Confidence</div>
+        <div id="dash-conf" class="stat-val gold">0%</div>
+      </div>
+    </div>
+
+    <!-- AI Signal -->
+    <div class="card">
+      <div class="card-title">AI SIGNAL ENGINE</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <div>
+          <div id="ai-signal-text" style="font-family:'Orbitron';font-size:12px;color:var(--gold);">ANALYZING...</div>
+          <div id="ai-reason-text" style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:3px;max-width:200px;"></div>
+        </div>
+        <div class="ring-wrap" style="width:56px;height:56px;">
+          <svg viewBox="0 0 56 56" style="width:56px;height:56px;transform:rotate(-90deg)">
+            <circle cx="28" cy="28" r="22" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5"/>
+            <circle id="conf-ring" cx="28" cy="28" r="22" fill="none" stroke="var(--gold)" stroke-width="5" stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="138.2" style="transition:stroke-dashoffset 0.6s ease"/>
+          </svg>
+          <div id="conf-ring-val" class="ring-val" style="font-size:13px;">0%</div>
+        </div>
+      </div>
+      <div class="ind-row" id="indicator-row"></div>
+    </div>
+
+    <!-- Martingale Status -->
+    <div class="card">
+      <div class="card-title">MARTINGALE STATUS</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:4px;">DEPTH / NEXT STAKE</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div id="mart-depth-val" class="stat-val" style="font-size:18px;">0</div>
+            <div style="font-size:11px;color:rgba(255,255,255,0.3);">→</div>
+            <div id="mart-stake-val" class="stat-val gold" style="font-size:18px;">0.50</div>
+          </div>
+        </div>
+        <div class="mart-depth" id="mart-depth-bars"></div>
+      </div>
+    </div>
+
+    <!-- Recent Trades -->
+    <div class="card">
+      <div class="card-title">RECENT TRADES</div>
+      <div id="recent-trades" style="min-height:60px;">
+        <div style="text-align:center;color:rgba(255,255,255,0.2);font-size:11px;padding:20px 0;">No trades yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DIGIT ANALYTICS -->
+  <div id="s-digits" class="section">
+    <div class="card">
+      <div class="card-title">DIGIT FREQUENCY HEATMAP</div>
+      <div style="display:flex;gap:6px;margin-bottom:10px;">
+        <div class="mode-row" id="digit-window-row">
+          <div class="mode-chip sel" data-w="100" onclick="setDigitWindow(100,this)">100</div>
+          <div class="mode-chip" data-w="500" onclick="setDigitWindow(500,this)">500</div>
+          <div class="mode-chip" data-w="1000" onclick="setDigitWindow(1000,this)">1K</div>
+          <div class="mode-chip" data-w="3000" onclick="setDigitWindow(3000,this)">3K</div>
+        </div>
+      </div>
+      <div id="digit-heatmap" class="digit-heatmap"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DIGIT DISTRIBUTION</div>
+      <div id="digit-bars"></div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-label">Hot Digit</div>
+        <div id="hot-digit" class="stat-val gold">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Cold Digit</div>
+        <div id="cold-digit" class="stat-val cyan">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Even %</div>
+        <div id="even-pct" class="stat-val">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Odd %</div>
+        <div id="odd-pct" class="stat-val">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Low (0-4)%</div>
+        <div id="low-pct" class="stat-val green">—</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">High (5-9)%</div>
+        <div id="high-pct" class="stat-val red">—</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:10px;">
+      <div class="card-title">CONSECUTIVE STREAKS</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">Max Low Streak</div><div id="streak-low" class="stat-val gold">0</div></div>
+        <div class="stat-box"><div class="stat-label">Max High Streak</div><div id="streak-high" class="stat-val red">0</div></div>
+        <div class="stat-box"><div class="stat-label">Cur Low Run</div><div id="cur-low" class="stat-val">0</div></div>
+        <div class="stat-box"><div class="stat-label">Cur High Run</div><div id="cur-high" class="stat-val">0</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI HUB -->
+  <div id="s-ai" class="section">
+    <div class="card">
+      <div class="card-title">AI CONFIDENCE</div>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div class="ring-wrap" style="width:80px;height:80px;">
+          <svg viewBox="0 0 80 80" style="width:80px;height:80px;transform:rotate(-90deg)">
+            <circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="7"/>
+            <circle id="ai-ring" cx="40" cy="40" r="32" fill="none" stroke="var(--gold)" stroke-width="7" stroke-linecap="round" stroke-dasharray="201.1" stroke-dashoffset="201.1" style="transition:all 0.6s ease"/>
+          </svg>
+          <div id="ai-ring-val" class="ring-val" style="font-size:18px;color:var(--gold);">0%</div>
+        </div>
+        <div style="flex:1;">
+          <div id="ai-main-signal" style="font-family:'Orbitron';font-size:14px;font-weight:700;color:var(--gold);margin-bottom:6px;">STANDBY</div>
+          <div id="ai-main-reason" style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.6;"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">AI MODE</div>
+      <div class="ai-mode-grid">
+        <div class="ai-mode-card sel-mode" onclick="setAIMode('conservative',this)">
+          <div class="ai-mode-name" style="color:var(--plasma);">CONSERVATIVE</div>
+          <div class="ai-mode-desc">High threshold. Low frequency. Capital preservation.</div>
+        </div>
+        <div class="ai-mode-card" onclick="setAIMode('balanced',this)">
+          <div class="ai-mode-name" style="color:var(--cyber);">BALANCED</div>
+          <div class="ai-mode-desc">Standard threshold. Moderate signals.</div>
+        </div>
+        <div class="ai-mode-card" onclick="setAIMode('aggressive',this)">
+          <div class="ai-mode-name" style="color:var(--gold);">AGGRESSIVE</div>
+          <div class="ai-mode-desc">Low threshold. High frequency. Higher risk.</div>
+        </div>
+        <div class="ai-mode-card" onclick="setAIMode('hyper',this)">
+          <div class="ai-mode-name" style="color:var(--danger);">HYPER</div>
+          <div class="ai-mode-desc">Near-instant signals. All entries taken.</div>
+        </div>
+      </div>
+      <div style="margin-top:10px;">
+        <label class="input-label">Min Confidence Threshold</label>
+        <input id="ai-threshold" class="input-field" type="range" min="30" max="95" value="60" oninput="updateAIThreshold(this.value)" style="padding:0;border:none;background:none;cursor:pointer;"/>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+          <span style="font-size:9px;color:rgba(255,255,255,0.3);">30%</span>
+          <span id="threshold-val" style="font-family:'JetBrains Mono';font-size:12px;color:var(--gold);">60%</span>
+          <span style="font-size:9px;color:rgba(255,255,255,0.3);">95%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">INDICATOR CONSENSUS</div>
+      <div id="indicator-consensus" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">AI FEATURE SCORES</div>
+      <div id="ai-features" style="display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+  </div>
+
+  <!-- VIRTUAL TRADING -->
+  <div id="s-virtual" class="section">
+    <div class="card" style="background:rgba(6,214,160,0.04);border-color:rgba(6,214,160,0.2);">
+      <div class="card-title" style="color:var(--cyber);">VIRTUAL TRADING CENTER</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">Virtual P&L</div><div id="v-pnl" class="stat-val cyan">0.00</div></div>
+        <div class="stat-box"><div class="stat-label">Win Rate</div><div id="v-wr" class="stat-val">0.0%</div></div>
+        <div class="stat-box"><div class="stat-label">Trades</div><div id="v-trades" class="stat-val">0</div></div>
+        <div class="stat-box"><div class="stat-label">Max DD</div><div id="v-dd" class="stat-val red">0.00</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">VIRTUAL TRADE SETTINGS</div>
+      <div class="input-wrap">
+        <label class="input-label">Stake Amount</label>
+        <input id="v-stake" class="input-field" type="number" value="0.5" min="0.1" step="0.1"/>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Strategy</label>
+        <select id="v-strategy" class="input-field">
+          <option value="ov4un5">Over4/Under5 Reversal (XML)</option>
+          <option value="risefall">Rise/Fall Reversal</option>
+          <option value="ai-confluence">AI Confluence</option>
+          <option value="digit-hotcold">Digit Hot/Cold</option>
+        </select>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Window Size (N ticks)</label>
+        <select id="v-window" class="input-field">
+          <option value="3">Last 3 digits</option>
+          <option value="4" selected>Last 4 digits</option>
+          <option value="5">Last 5 digits</option>
+          <option value="6">Last 6 digits</option>
+          <option value="7">Last 7 digits</option>
+          <option value="8">Last 8 digits</option>
+        </select>
+      </div>
+      <div class="toggle-wrap" style="margin-bottom:10px;">
+        <label class="toggle"><input id="v-martingale" type="checkbox" checked/><span class="toggle-slider"></span></label>
+        <span style="font-size:12px;">Enable Martingale (2x)</span>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-green" style="flex:1;" onclick="startVirtualTrading()">▶ START SIM</button>
+        <button class="btn btn-ghost" onclick="stopVirtualTrading()">■ STOP</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetVirtual()">↺</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">VIRTUAL TRADE LOG</div>
+      <div id="v-trade-list" class="scroll-list" style="max-height:250px;"></div>
+    </div>
+  </div>
+
+  <!-- REAL TRADING -->
+  <div id="s-trading" class="section">
+    <div id="real-mode-banner" class="card" style="background:rgba(245,158,11,0.05);border-color:rgba(245,158,11,0.3);text-align:center;padding:12px;">
+      <div style="font-family:'Orbitron';font-size:10px;letter-spacing:2px;color:var(--gold);margin-bottom:4px;">⚡ LIVE TRADING</div>
+      <div id="real-balance-disp" style="font-family:'JetBrains Mono';font-size:22px;font-weight:700;color:#fff;">Connecting...</div>
+      <div id="real-currency" style="font-size:10px;color:rgba(255,255,255,0.35);">USD</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">TRADE CONFIGURATION</div>
+      <div class="input-wrap">
+        <label class="input-label">Strategy</label>
+        <select id="r-strategy" class="input-field">
+          <option value="ov4un5">Over4/Under5 Reversal (XML)</option>
+          <option value="risefall">Rise/Fall Reversal</option>
+          <option value="ai-confluence">AI Confluence</option>
+          <option value="digit-hotcold">Digit Hot/Cold</option>
+          <option value="manual">Manual</option>
+        </select>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Window (N digits)</label>
+        <select id="r-window" class="input-field">
+          <option value="3">3</option>
+          <option value="4" selected>4</option>
+          <option value="5">5</option>
+          <option value="6">6</option>
+          <option value="7">7</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="input-wrap" style="margin-bottom:0;">
+          <label class="input-label">Stake (USD)</label>
+          <input id="r-stake" class="input-field" type="number" value="0.5" min="0.35" step="0.05"/>
+        </div>
+        <div class="input-wrap" style="margin-bottom:0;">
+          <label class="input-label">Dur (ticks)</label>
+          <input id="r-duration" class="input-field" type="number" value="1" min="1" max="10"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">RISK CONTROLS</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div class="input-wrap" style="margin-bottom:0;">
+          <label class="input-label">Stop Loss ($)</label>
+          <input id="r-stoploss" class="input-field" type="number" value="30" min="1"/>
+        </div>
+        <div class="input-wrap" style="margin-bottom:0;">
+          <label class="input-label">Take Profit (wins)</label>
+          <input id="r-takeprofit" class="input-field" type="number" value="4" min="1"/>
+        </div>
+        <div class="input-wrap" style="margin-bottom:0;">
+          <label class="input-label">Max Mart Depth</label>
+          <input id="r-max-depth" class="input-field" type="number" value="6" min="1" max="12"/>
+        </div>
+        <div class="input-wrap" style="margin-bottom:0;">
+          <label class="input-label">Min AI Conf %</label>
+          <input id="r-min-conf" class="input-field" type="number" value="60" min="0" max="100"/>
+        </div>
+      </div>
+      <div class="toggle-wrap" style="margin-top:10px;">
+        <label class="toggle"><input id="r-martingale" type="checkbox" checked/><span class="toggle-slider"></span></label>
+        <span style="font-size:12px;">Martingale Recovery</span>
+      </div>
+      <div class="toggle-wrap" style="margin-top:8px;">
+        <label class="toggle"><input id="r-ai-filter" type="checkbox" checked/><span class="toggle-slider"></span></label>
+        <span style="font-size:12px;">AI Confidence Filter</span>
+      </div>
+    </div>
+
+    <!-- Manual Trade Buttons -->
+    <div id="manual-trade-section" class="card" style="display:none;">
+      <div class="card-title">MANUAL EXECUTION</div>
+      <div class="btn-group">
+        <button class="btn btn-green" style="flex:1;font-size:12px;" onclick="manualTrade('DIGITOVER',4)">OVER 4 ▲</button>
+        <button class="btn btn-red" style="flex:1;font-size:12px;" onclick="manualTrade('DIGITUNDER',5)">UNDER 5 ▼</button>
+      </div>
+      <div class="btn-group" style="margin-top:6px;">
+        <button class="btn btn-green" style="flex:1;font-size:12px;" onclick="manualTrade('CALL',null)">RISE ↑</button>
+        <button class="btn btn-red" style="flex:1;font-size:12px;" onclick="manualTrade('PUT',null)">FALL ↓</button>
+      </div>
+    </div>
+
+    <!-- Active Trade Display -->
+    <div id="active-trade-display" class="card" style="display:none;border-color:rgba(245,158,11,0.4);">
+      <div class="card-title pulse-gold" style="color:var(--gold);">● TRADE ACTIVE</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div id="at-type" style="font-family:'Orbitron';font-size:14px;color:var(--gold);">--</div>
+          <div id="at-stake" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;">$0.00</div>
+        </div>
+        <div id="at-timer" style="font-family:'JetBrains Mono';font-size:28px;font-weight:700;">--</div>
+      </div>
+    </div>
+
+    <div class="btn-group" style="margin-top:4px;">
+      <button id="auto-trade-btn" class="btn btn-gold btn-full" onclick="toggleAutoTrading()">⚡ START AUTO TRADING</button>
+    </div>
+    <button class="btn btn-ghost btn-full btn-sm" style="margin-top:6px;" onclick="emergencyStop()">🛑 EMERGENCY STOP</button>
+
+    <div class="card" style="margin-top:10px;">
+      <div class="card-title">LIVE TRADE LOG</div>
+      <div id="r-trade-list" class="scroll-list"></div>
+    </div>
+  </div>
+
+  <!-- STRATEGY MANAGER -->
+  <div id="s-strategy" class="section">
+    <div class="card">
+      <div class="card-title">STRATEGY LIBRARY</div>
+
+      <!-- Ov4Un5 Reversal -->
+      <div class="strat-card active-strat" id="strat-ov4un5">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-family:'Orbitron';font-size:10px;letter-spacing:1px;color:var(--gold);margin-bottom:3px;">OV4UN5 REVERSAL</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);line-height:1.5;max-width:220px;">Last N digits all ≤4 → OVER 4<br/>Last N digits all ≥5 → UNDER 5</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <span class="badge badge-gold">XML ORIGIN</span>
+            <span class="badge badge-green">DIGIT</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+          <div class="card-sm" style="padding:6px;text-align:center;">
+            <div style="font-size:8px;color:rgba(255,255,255,0.35);margin-bottom:2px;">STAKE</div>
+            <div style="font-family:'JetBrains Mono';font-size:11px;" id="ov4-stake-disp">$0.50</div>
+          </div>
+          <div class="card-sm" style="padding:6px;text-align:center;">
+            <div style="font-size:8px;color:rgba(255,255,255,0.35);margin-bottom:2px;">MART</div>
+            <div style="font-family:'JetBrains Mono';font-size:11px;">2x</div>
+          </div>
+          <div class="card-sm" style="padding:6px;text-align:center;">
+            <div style="font-size:8px;color:rgba(255,255,255,0.35);margin-bottom:2px;">SL</div>
+            <div style="font-family:'JetBrains Mono';font-size:11px;">$30</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:5px;">WINDOW SIZE</div>
+          <div class="mode-row" id="ov4-window-row">
+            <div class="mode-chip" onclick="selectOv4Window(3,this)">3</div>
+            <div class="mode-chip sel" onclick="selectOv4Window(4,this)">4</div>
+            <div class="mode-chip" onclick="selectOv4Window(5,this)">5</div>
+            <div class="mode-chip" onclick="selectOv4Window(6,this)">6</div>
+            <div class="mode-chip" onclick="selectOv4Window(7,this)">7</div>
+            <div class="mode-chip" onclick="selectOv4Window(8,this)">8</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div id="ov4-stats" style="font-size:10px;color:rgba(255,255,255,0.35);">W:0 L:0 PnL:0.00</div>
+          <button class="btn btn-ghost btn-sm" onclick="resetStrategy('ov4un5')">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- Rise/Fall Reversal -->
+      <div class="strat-card" id="strat-risefall">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-family:'Orbitron';font-size:10px;letter-spacing:1px;color:var(--cyber);margin-bottom:3px;">RISE/FALL REVERSAL</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);line-height:1.5;max-width:220px;">N consecutive FALL ticks → BUY RISE<br/>N consecutive RISE ticks → BUY FALL</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <span class="badge badge-cyan">TICK DIR</span>
+            <span class="badge badge-green">CALL/PUT</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+          <div class="card-sm" style="padding:6px;text-align:center;">
+            <div style="font-size:8px;color:rgba(255,255,255,0.35);margin-bottom:2px;">STAKE</div>
+            <div style="font-family:'JetBrains Mono';font-size:11px;" id="rf-stake-disp">$0.35</div>
+          </div>
+          <div class="card-sm" style="padding:6px;text-align:center;">
+            <div style="font-size:8px;color:rgba(255,255,255,0.35);margin-bottom:2px;">DUR</div>
+            <div style="font-family:'JetBrains Mono';font-size:11px;">5T</div>
+          </div>
+          <div class="card-sm" style="padding:6px;text-align:center;">
+            <div style="font-size:8px;color:rgba(255,255,255,0.35);margin-bottom:2px;">SL</div>
+            <div style="font-family:'JetBrains Mono';font-size:11px;">$20</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;">
+          <div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:5px;">STREAK LENGTH (N)</div>
+          <div class="mode-row" id="rf-window-row">
+            <div class="mode-chip" onclick="selectRfWindow(3,this)">3</div>
+            <div class="mode-chip sel" onclick="selectRfWindow(5,this)">5</div>
+            <div class="mode-chip" onclick="selectRfWindow(7,this)">7</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div id="rf-stats" style="font-size:10px;color:rgba(255,255,255,0.35);">W:0 L:0 PnL:0.00</div>
+          <button class="btn btn-ghost btn-sm" onclick="resetStrategy('risefall')">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- AI Confluence -->
+      <div class="strat-card" id="strat-ai-confluence">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-family:'Orbitron';font-size:10px;letter-spacing:1px;color:var(--plasma);margin-bottom:3px;">AI CONFLUENCE</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);line-height:1.5;max-width:220px;">Multi-indicator AI fusion. Trades only at high-probability confluence zones.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <span class="badge badge-purple">AI POWERED</span>
+            <span class="badge badge-gold">ADAPTIVE</span>
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div id="ai-conf-stats" style="font-size:10px;color:rgba(255,255,255,0.35);">W:0 L:0 PnL:0.00</div>
+          <button class="btn btn-ghost btn-sm" onclick="resetStrategy('ai-confluence')">↺ Reset</button>
+        </div>
+      </div>
+
+      <!-- Digit Hot/Cold -->
+      <div class="strat-card" id="strat-digit-hotcold">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <div style="font-family:'Orbitron';font-size:10px;letter-spacing:1px;color:var(--warn);margin-bottom:3px;">DIGIT HOT/COLD</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);line-height:1.5;max-width:220px;">Statistically underrepresented digits. Mean-reversion exploitation.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+            <span class="badge badge-gold">STAT</span>
+            <span class="badge badge-green">DIGIT</span>
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;">
+          <div id="hc-stats" style="font-size:10px;color:rgba(255,255,255,0.35);">W:0 L:0 PnL:0.00</div>
+          <button class="btn btn-ghost btn-sm" onclick="resetStrategy('digit-hotcold')">↺ Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Strategy Stats Summary -->
+    <div class="card">
+      <div class="card-title">OVERALL PERFORMANCE</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">Best Strategy</div><div id="best-strat" class="stat-val gold" style="font-size:12px;">—</div></div>
+        <div class="stat-box"><div class="stat-label">Total P&L</div><div id="total-pnl" class="stat-val gold">0.00</div></div>
+        <div class="stat-box"><div class="stat-label">Profit Factor</div><div id="profit-factor" class="stat-val cyan">—</div></div>
+        <div class="stat-box"><div class="stat-label">Sharpe Est</div><div id="sharpe-est" class="stat-val">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGS -->
+  <div id="s-logs" class="section">
+    <div style="display:flex;gap:6px;margin-bottom:10px;">
+      <div class="mode-chip sel" onclick="switchLogTab('trade',this)" style="flex:1;text-align:center;">TRADES</div>
+      <div class="mode-chip" onclick="switchLogTab('system',this)" style="flex:1;text-align:center;">SYSTEM</div>
+      <div class="mode-chip" onclick="switchLogTab('ai',this)" style="flex:1;text-align:center;">AI</div>
+    </div>
+
+    <div id="log-trade" class="card" style="min-height:300px;">
+      <div class="card-title">TRADE LOG</div>
+      <div id="trade-log-list" class="scroll-list" style="max-height:400px;"></div>
+    </div>
+    <div id="log-system" class="card" style="display:none;min-height:300px;">
+      <div class="card-title">SYSTEM LOG</div>
+      <div id="system-log-list" class="scroll-list" style="max-height:400px;"></div>
+    </div>
+    <div id="log-ai" class="card" style="display:none;min-height:300px;">
+      <div class="card-title">AI DECISION LOG</div>
+      <div id="ai-log-list" class="scroll-list" style="max-height:400px;"></div>
+    </div>
+
+    <div class="btn-group" style="margin-top:10px;">
+      <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="exportLogs('json')">⬇ JSON</button>
+      <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="exportLogs('csv')">⬇ CSV</button>
+      <button class="btn btn-red btn-sm" style="flex:1;" onclick="clearLogs()">🗑 Clear</button>
+    </div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="s-analytics" class="section">
+    <div class="card">
+      <div class="card-title">SESSION ANALYTICS</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-label">Total Trades</div><div id="an-total" class="stat-val">0</div></div>
+        <div class="stat-box"><div class="stat-label">Win Rate</div><div id="an-wr" class="stat-val gold">0%</div></div>
+        <div class="stat-box"><div class="stat-label">Avg Win</div><div id="an-avgw" class="stat-val green">0.00</div></div>
+        <div class="stat-box"><div class="stat-label">Avg Loss</div><div id="an-avgl" class="stat-val red">0.00</div></div>
+        <div class="stat-box"><div class="stat-label">Max Win Streak</div><div id="an-wstreak" class="stat-val cyan">0</div></div>
+        <div class="stat-box"><div class="stat-label">Max Loss Streak</div><div id="an-lstreak" class="stat-val red">0</div></div>
+        <div class="stat-box"><div class="stat-label">Max Drawdown</div><div id="an-maxdd" class="stat-val red">0.00</div></div>
+        <div class="stat-box"><div class="stat-label">Profit Factor</div><div id="an-pf" class="stat-val gold">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">P&L CURVE</div>
+      <div class="chart-wrap" style="height:160px;">
+        <canvas id="pnl-chart" class="chart-canvas" height="160"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">DIGIT WIN RATE BY TYPE</div>
+      <div id="digit-wr-bars"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">RESET OPTIONS</div>
+      <div class="btn-group">
+        <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="softReset()">Soft Reset</button>
+        <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="tradingReset()">Trade Reset</button>
+        <button class="btn btn-red btn-sm" style="flex:1;" onclick="hardReset()">Hard Reset</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ── BOTTOM NAV ────────────────────────────────────────── -->
+<div id="bottomnav">
+  <button class="nav-btn active" onclick="navTo('dashboard',this)">
+    <span class="nav-icon">📊</span><span class="nav-label">DASH</span>
+  </button>
+  <button class="nav-btn" onclick="navTo('digits',this)">
+    <span class="nav-icon">🔢</span><span class="nav-label">DIGITS</span>
+  </button>
+  <button class="nav-btn" onclick="navTo('ai',this)">
+    <span class="nav-icon">🧠</span><span class="nav-label">AI HUB</span>
+  </button>
+  <button class="nav-btn" onclick="navTo('virtual',this)">
+    <span class="nav-icon">🎮</span><span class="nav-label">VIRTUAL</span>
+  </button>
+  <button class="nav-btn" onclick="navTo('trading',this)">
+    <span class="nav-icon">⚡</span><span class="nav-label">TRADE</span>
+  </button>
+  <button class="nav-btn" onclick="navTo('strategy',this)">
+    <span class="nav-icon">📐</span><span class="nav-label">STRAT</span>
+  </button>
+  <button class="nav-btn" onclick="navTo('logs',this)">
+    <span class="nav-icon">📋</span><span class="nav-label">LOGS</span>
+  </button>
+  <button class="nav-btn" onclick="navTo('analytics',this)">
+    <span class="nav-icon">📈</span><span class="nav-label">STATS</span>
+  </button>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     AXIOM DIGIT AI — COMPLETE TRADING ENGINE
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ──────────────────────────────────────────────
+// 1. CONSTANTS & CONFIG
+// ──────────────────────────────────────────────
+const WS_URL = 'wss://ws.binaryws.com/websockets/v3';
+const WS_ALT = 'wss://ws.derivws.com/websockets/v3';
+
+const MARKET_DECIMALS = {
+  R_10:'3',R_25:'3',R_50:'2',R_75:'2',R_100:'2',
+  '1HZ10V':'3','1HZ25V':'3','1HZ50V':'2','1HZ75V':'2','1HZ100V':'2',
+  BOOM300N:'2',BOOM500:'2',BOOM1000:'2',CRASH300N:'2',CRASH500:'2',CRASH1000:'2',
+  JD10:'3',JD25:'3',JD50:'2',JD75:'2',JD100:'2',STPIDX:'2'
+};
+
+const AI_THRESHOLDS = { conservative:72, balanced:60, aggressive:48, hyper:35 };
+
+const MARTINGALE_COLORS = ['#10b981','#f59e0b','#f97316','#ef4444','#b91c1c','#7f1d1d'];
+
+// ──────────────────────────────────────────────
+// 2. GLOBAL STATE
+// ──────────────────────────────────────────────
+const S = {
+  ws: null,
+  connected: false,
+  authorized: false,
+  token: '',
+  appId: '1089',
+  isPaper: true,
+  symbol: 'R_25',
+  balance: 10000,
+  currency: 'USD',
+
+  // Tick data
+  ticks: [],          // {quote, epoch, dir, digit}
+  digits: [],         // last digit only
+  digitWindow: 100,   // analysis window
+  lastQuote: 0,
+  prevQuote: 0,
+
+  // Trade state
+  autoTrading: false,
+  virtualRunning: false,
+  activeTrade: null,
+  pendingProposal: null,
+  reqId: 1,           // INTEGER req_id counter (CRITICAL)
+  tradeInProgress: false,
+
+  // Strategies
+  ov4Window: 4,
+  rfWindow: 5,
+  activeStrategy: 'ov4un5',
+
+  // Martingale
+  martDepth: 0,
+  currentStake: 0.5,
+  initialStake: 0.5,
+  martMultiplier: 2,
+
+  // Risk
+  sessionPnl: 0,
+  sessionWins: 0,
+  sessionLosses: 0,
+  maxDrawdown: 0,
+  peakPnl: 0,
+  stopLoss: 30,
+  takeProfitWins: 4,
+  maxMartDepth: 6,
+  runCount: 0,
+  emergencyStopped: false,
+
+  // AI
+  aiMode: 'conservative',
+  aiThreshold: 60,
+  aiConfidence: 0,
+  aiSignal: null,
+
+  // Virtual
+  virtualPnl: 0,
+  virtualWins: 0,
+  virtualLosses: 0,
+  virtualMaxDD: 0,
+  virtualPeakPnl: 0,
+  virtualStake: 0.5,
+  virtualMartDepth: 0,
+  virtualCurrentStake: 0.5,
+
+  // Logs
+  tradeLogs: [],
+  systemLogs: [],
+  aiLogs: [],
+  pnlHistory: [0],
+
+  // Strategy stats
+  stratStats: {
+    'ov4un5':        {w:0,l:0,pnl:0},
+    'risefall':      {w:0,l:0,pnl:0},
+    'ai-confluence': {w:0,l:0,pnl:0},
+    'digit-hotcold': {w:0,l:0,pnl:0}
+  },
+
+  // Reconnect
+  reconnectAttempts: 0,
+  reconnectTimer: null,
+  pingInterval: null,
+  tickSubId: null,
+};
+
+// ──────────────────────────────────────────────
+// 3. UTILITY FUNCTIONS
+// ──────────────────────────────────────────────
+function nextReqId() { return S.reqId++; }
+
+function getLastDigit(quote, symbol) {
+  const dec = parseInt(MARKET_DECIMALS[symbol] || '2');
+  const str = parseFloat(quote).toFixed(dec);
+  return parseInt(str[str.length - 1]);
+}
+
+function fmtMoney(n) {
+  const v = parseFloat(n)||0;
+  return (v >= 0 ? '+' : '') + v.toFixed(2);
+}
+
+function fmtTime(epoch) {
+  if (!epoch) return '--:--:--';
+  return new Date(epoch * 1000).toLocaleTimeString();
+}
+
+function now() { return Math.floor(Date.now() / 1000); }
+
+function clamp(v, lo, hi) { return Math.min(Math.max(v, lo), hi); }
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function toast(msg, type = 'info', dur = 2800) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  const c = document.getElementById('toast-container');
+  c.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = '0.3s'; setTimeout(() => el.remove(), 300); }, dur);
+}
+
+function sysLog(msg, level = 'info') {
+  const entry = { ts: Date.now(), msg, level };
+  S.systemLogs.unshift(entry);
+  if (S.systemLogs.length > 500) S.systemLogs.pop();
+  renderSystemLog();
+}
+
+function aiLog(msg) {
+  const entry = { ts: Date.now(), msg };
+  S.aiLogs.unshift(entry);
+  if (S.aiLogs.length > 300) S.aiLogs.pop();
+  renderAILog();
+}
+
+function tradeLog(entry) {
+  S.tradeLogs.unshift(entry);
+  if (S.tradeLogs.length > 1000) S.tradeLogs.pop();
+  saveLogsToStorage();
+  renderTradeLogs();
+}
+
+// ──────────────────────────────────────────────
+// 4. INDEXED DB PERSISTENCE
+// ──────────────────────────────────────────────
+let db = null;
+function initDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open('AxiomDigitAI', 2);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('trades')) d.createObjectStore('trades', {keyPath:'id',autoIncrement:true});
+      if (!d.objectStoreNames.contains('settings')) d.createObjectStore('settings', {keyPath:'key'});
+      if (!d.objectStoreNames.contains('sessions')) d.createObjectStore('sessions', {keyPath:'id',autoIncrement:true});
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = e => { console.error('DB error', e); res(null); };
+  });
+}
+
+function dbPut(store, data) {
+  if (!db) return;
+  try {
+    const tx = db.transaction(store, 'readwrite');
+    tx.objectStore(store).put(data);
+  } catch(e){}
+}
+
+function dbGetAll(store, cb) {
+  if (!db) { cb([]); return; }
+  try {
+    const tx = db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).getAll();
+    req.onsuccess = e => cb(e.target.result || []);
+    req.onerror = () => cb([]);
+  } catch(e){ cb([]); }
+}
+
+function saveLogsToStorage() {
+  try {
+    localStorage.setItem('axiom_tradeLogs', JSON.stringify(S.tradeLogs.slice(0,200)));
+    localStorage.setItem('axiom_sessionPnl', S.sessionPnl);
+    localStorage.setItem('axiom_stats', JSON.stringify(S.stratStats));
+  } catch(e){}
+}
+
+function loadFromStorage() {
+  try {
+    const logs = localStorage.getItem('axiom_tradeLogs');
+    if (logs) S.tradeLogs = JSON.parse(logs);
+    const pnl = localStorage.getItem('axiom_sessionPnl');
+    if (pnl) S.sessionPnl = parseFloat(pnl)||0;
+    const stats = localStorage.getItem('axiom_stats');
+    if (stats) S.stratStats = JSON.parse(stats);
+  } catch(e){}
+}
+
+// ──────────────────────────────────────────────
+// 5. WEBSOCKET ENGINE
+// ──────────────────────────────────────────────
+function connect(token, appId) {
+  if (S.ws && S.ws.readyState < 2) S.ws.close();
+  clearInterval(S.pingInterval);
+  const url = `${WS_URL}?app_id=${appId}&l=EN&brand=deriv`;
+  try {
+    S.ws = new WebSocket(url);
+  } catch(e) {
+    scheduleReconnect();
+    return;
+  }
+  S.ws.onopen = () => {
+    S.connected = true;
+    S.reconnectAttempts = 0;
+    updateConnDot('live');
+    sysLog('WebSocket connected', 'success');
+    if (token && token.length > 5) {
+      send({ authorize: token, req_id: nextReqId() });
+    } else {
+      send({ ping: 1, req_id: nextReqId() });
+      subscribeToTicks();
+    }
+    S.pingInterval = setInterval(() => {
+      if (S.ws && S.ws.readyState === 1) send({ ping: 1, req_id: nextReqId() });
+    }, 25000);
+  };
+  S.ws.onmessage = e => {
+    try { handleMessage(JSON.parse(e.data)); } catch(err){}
+  };
+  S.ws.onclose = () => {
+    S.connected = false;
+    S.authorized = false;
+    clearInterval(S.pingInterval);
+    updateConnDot('off');
+    sysLog('WebSocket disconnected', 'warn');
+    scheduleReconnect();
+  };
+  S.ws.onerror = () => {
+    sysLog('WebSocket error', 'error');
+  };
+}
+
+function send(obj) {
+  if (S.ws && S.ws.readyState === 1) {
+    S.ws.send(JSON.stringify(obj));
+  }
+}
+
+function scheduleReconnect() {
+  if (S.reconnectTimer) return;
+  const delay = Math.min(1000 * Math.pow(2, S.reconnectAttempts), 30000);
+  S.reconnectAttempts++;
+  updateConnDot('warn');
+  sysLog(`Reconnecting in ${Math.round(delay/1000)}s...`, 'warn');
+  S.reconnectTimer = setTimeout(() => {
+    S.reconnectTimer = null;
+    connect(S.token, S.appId);
+  }, delay);
+}
+
+function handleMessage(msg) {
+  if (msg.error) {
+    sysLog(`API error: ${msg.error.message}`, 'error');
+    if (msg.error.code === 'AuthorizationRequired' || msg.error.code === 'InvalidToken') {
+      toast('Invalid token. Switching to paper mode.', 'loss');
+      S.isPaper = true;
+    }
+    return;
+  }
+  switch (msg.msg_type) {
+    case 'authorize': handleAuthorize(msg.authorize); break;
+    case 'tick': handleTick(msg.tick); break;
+    case 'history': handleHistory(msg.history); break;
+    case 'proposal': handleProposal(msg); break;
+    case 'buy': handleBuy(msg.buy); break;
+    case 'proposal_open_contract': handlePOC(msg.proposal_open_contract); break;
+    case 'balance': handleBalance(msg.balance); break;
+    case 'ping': break;
+    default: break;
+  }
+}
+
+function handleAuthorize(auth) {
+  S.authorized = true;
+  S.isPaper = false;
+  S.balance = parseFloat(auth.balance) || 0;
+  S.currency = auth.currency || 'USD';
+  sysLog(`Authorized: ${auth.loginid} | Balance: ${S.balance} ${S.currency}`, 'success');
+  toast(`✓ Logged in as ${auth.loginid}`, 'win');
+  updateBalanceDisplay();
+  send({ balance: 1, subscribe: 1, req_id: nextReqId() });
+  subscribeToTicks();
+}
+
+function handleBalance(bal) {
+  S.balance = parseFloat(bal.balance) || S.balance;
+  S.currency = bal.currency || S.currency;
+  updateBalanceDisplay();
+}
+
+function subscribeToTicks() {
+  // First get history
+  send({
+    ticks_history: S.symbol,
+    count: 500,
+    end: 'latest',
+    style: 'ticks',
+    req_id: nextReqId()
+  });
+  // Then subscribe
+  send({
+    ticks: S.symbol,
+    subscribe: 1,
+    req_id: nextReqId()
+  });
+}
+
+function handleHistory(hist) {
+  if (!hist || !hist.prices) return;
+  const prices = hist.prices;
+  const times = hist.times || [];
+  S.ticks = [];
+  S.digits = [];
+  for (let i = 0; i < prices.length; i++) {
+    const q = prices[i];
+    const ep = times[i] || 0;
+    const digit = getLastDigit(q, S.symbol);
+    const dir = i > 0 ? (q > prices[i-1] ? 'up' : q < prices[i-1] ? 'dn' : 'eq') : 'eq';
+    S.ticks.push({ quote: q, epoch: ep, dir, digit });
+    S.digits.push(digit);
+  }
+  S.lastQuote = prices[prices.length - 1];
+  sysLog(`Loaded ${S.ticks.length} historical ticks`, 'success');
+  updateAllUI();
+}
+
+function handleTick(tick) {
+  if (!tick) return;
+  const q = parseFloat(tick.quote);
+  const ep = tick.epoch;
+  const digit = getLastDigit(q, S.symbol);
+  const dir = q > S.lastQuote ? 'up' : q < S.lastQuote ? 'dn' : 'eq';
+  S.prevQuote = S.lastQuote;
+  S.lastQuote = q;
+  S.ticks.push({ quote: q, epoch: ep, dir, digit });
+  S.digits.push(digit);
+  if (S.ticks.length > 5000) { S.ticks.shift(); }
+  if (S.digits.length > 5000) { S.digits.shift(); }
+  updateTickUI(q, digit, dir);
+  runAnalysisEngine();
+  if (S.autoTrading && !S.tradeInProgress && !S.emergencyStopped) {
+    tryAutoTrade();
+  }
+  if (S.virtualRunning && !S.tradeInProgress) {
+    tryVirtualTrade();
+  }
+}
+
+// ──────────────────────────────────────────────
+// 6. DIGIT ANALYSIS ENGINE
+// ──────────────────────────────────────────────
+function analyzeDigits(window = 100) {
+  const d = S.digits.slice(-window);
+  if (d.length === 0) return null;
+  const freq = new Array(10).fill(0);
+  d.forEach(x => freq[x]++);
+  const total = d.length;
+  const pcts = freq.map(f => ((f / total) * 100));
+  const hot = freq.indexOf(Math.max(...freq));
+  const cold = freq.indexOf(Math.min(...freq));
+  const even = d.filter(x => x % 2 === 0).length;
+  const odd = total - even;
+  const low = d.filter(x => x <= 4).length;
+  const high = total - low;
+
+  // Streaks
+  let maxLow = 0, maxHigh = 0, curLow = 0, curHigh = 0;
+  for (let x of d) {
+    if (x <= 4) { curLow++; curHigh = 0; maxLow = Math.max(maxLow, curLow); }
+    else { curHigh++; curLow = 0; maxHigh = Math.max(maxHigh, curHigh); }
+  }
+  // Current run
+  let runLow = 0, runHigh = 0;
+  for (let i = d.length - 1; i >= 0; i--) {
+    if (d[i] <= 4) { if (runHigh > 0) break; runLow++; }
+    else { if (runLow > 0) break; runHigh++; }
+  }
+  return { freq, pcts, hot, cold, total, even, odd, low, high, maxLow, maxHigh, curLow: runLow, curHigh: runHigh };
+}
+
+// ──────────────────────────────────────────────
+// 7. TECHNICAL ANALYSIS ENGINE
+// ──────────────────────────────────────────────
+const TA = {
+  prices() { return S.ticks.map(t => t.quote); },
+
+  ema(prices, period) {
+    if (prices.length < period) return null;
+    const k = 2 / (period + 1);
+    let ema = prices.slice(0, period).reduce((a,b) => a+b, 0) / period;
+    for (let i = period; i < prices.length; i++) ema = prices[i] * k + ema * (1 - k);
+    return ema;
+  },
+
+  sma(prices, period) {
+    if (prices.length < period) return null;
+    const s = prices.slice(-period);
+    return s.reduce((a,b)=>a+b,0)/period;
+  },
+
+  rsi(prices, period = 14) {
+    if (prices.length < period + 1) return 50;
+    const diffs = prices.slice(-period-1);
+    let gains = 0, losses = 0;
+    for (let i = 1; i < diffs.length; i++) {
+      const d = diffs[i] - diffs[i-1];
+      if (d > 0) gains += d; else losses -= d;
+    }
+    const avgG = gains / period, avgL = losses / period;
+    if (avgL === 0) return 100;
+    return 100 - (100 / (1 + avgG/avgL));
+  },
+
+  macd(prices) {
+    const fast = this.ema(prices, 12);
+    const slow = this.ema(prices, 26);
+    if (!fast || !slow) return { macd: 0, signal: 0, hist: 0 };
+    const m = fast - slow;
+    return { macd: m, signal: m * 0.8, hist: m * 0.2 };
+  },
+
+  bollinger(prices, period = 20) {
+    const sma = this.sma(prices, period);
+    if (!sma || prices.length < period) return null;
+    const slice = prices.slice(-period);
+    const variance = slice.reduce((acc,p) => acc + Math.pow(p - sma, 2), 0) / period;
+    const std = Math.sqrt(variance);
+    return { upper: sma + 2*std, mid: sma, lower: sma - 2*std, width: 4*std/sma };
+  },
+
+  atr(n = 14) {
+    if (S.ticks.length < n+1) return 0;
+    const sl = S.ticks.slice(-(n+1));
+    let sum = 0;
+    for (let i = 1; i < sl.length; i++) {
+      sum += Math.abs(sl[i].quote - sl[i-1].quote);
+    }
+    return sum / n;
+  },
+
+  momentum(prices, period = 10) {
+    if (prices.length < period+1) return 0;
+    return prices[prices.length-1] - prices[prices.length-1-period];
+  },
+
+  stoch(prices, period = 14) {
+    if (prices.length < period) return 50;
+    const sl = prices.slice(-period);
+    const hi = Math.max(...sl), lo = Math.min(...sl);
+    if (hi === lo) return 50;
+    return ((sl[sl.length-1] - lo) / (hi - lo)) * 100;
+  },
+
+  adx(n = 14) {
+    if (S.ticks.length < n+1) return 25;
+    const sl = S.ticks.slice(-(n+1));
+    let trSum = 0;
+    for (let i = 1; i < sl.length; i++) trSum += Math.abs(sl[i].quote - sl[i-1].quote);
+    return Math.min(100, (trSum / n) * 500);
+  },
+
+  getAll() {
+    const p = this.prices();
+    if (p.length < 20) return null;
+    const cur = p[p.length-1];
+    const ema9 = this.ema(p, 9);
+    const ema21 = this.ema(p, 21);
+    const ema50 = this.ema(p, 50);
+    const rsi = this.rsi(p, 14);
+    const macd = this.macd(p);
+    const bb = this.bollinger(p, 20);
+    const mom = this.momentum(p, 10);
+    const stoch = this.stoch(p, 14);
+    const atr = this.atr(14);
+    const adx = this.adx(14);
+    return { cur, ema9, ema21, ema50, rsi, macd, bb, mom, stoch, atr, adx };
+  }
+};
+
+// ──────────────────────────────────────────────
+// 8. AI DECISION ENGINE
+// ──────────────────────────────────────────────
+function runAIEngine() {
+  const ta = TA.getAll();
+  if (!ta || S.digits.length < 20) return null;
+  const da = analyzeDigits(S.digitWindow);
+  if (!da) return null;
+
+  const scores = [];
+  const reasons = [];
+  let bullScore = 0, bearScore = 0;
+
+  // EMA trend
+  if (ta.ema9 && ta.ema21) {
+    if (ta.ema9 > ta.ema21) { bullScore += 10; reasons.push({n:'EMA9>21',dir:'bull'}); }
+    else { bearScore += 10; reasons.push({n:'EMA9<21',dir:'bear'}); }
+  }
+  if (ta.ema21 && ta.ema50) {
+    if (ta.ema21 > ta.ema50) { bullScore += 8; reasons.push({n:'EMA21>50',dir:'bull'}); }
+    else { bearScore += 8; reasons.push({n:'EMA21<50',dir:'bear'}); }
+  }
+
+  // RSI
+  if (ta.rsi < 30) { bullScore += 15; reasons.push({n:`RSI${ta.rsi.toFixed(0)}`,dir:'bull'}); }
+  else if (ta.rsi > 70) { bearScore += 15; reasons.push({n:`RSI${ta.rsi.toFixed(0)}`,dir:'bear'}); }
+  else { scores.push(0); reasons.push({n:`RSI${ta.rsi.toFixed(0)}`,dir:'neut'}); }
+
+  // MACD
+  if (ta.macd.hist > 0) { bullScore += 8; reasons.push({n:'MACD+',dir:'bull'}); }
+  else { bearScore += 8; reasons.push({n:'MACD-',dir:'bear'}); }
+
+  // Bollinger
+  if (ta.bb) {
+    if (ta.cur < ta.bb.lower) { bullScore += 12; reasons.push({n:'BB-OVERSOLD',dir:'bull'}); }
+    else if (ta.cur > ta.bb.upper) { bearScore += 12; reasons.push({n:'BB-OVERBOUGHT',dir:'bear'}); }
+    else { reasons.push({n:`BB-WIDTH${(ta.bb.width*100).toFixed(1)}%`,dir:'neut'}); }
+  }
+
+  // Momentum
+  if (ta.mom > 0) { bullScore += 5; } else { bearScore += 5; }
+
+  // Stochastic
+  if (ta.stoch < 20) { bullScore += 10; reasons.push({n:`STOCH${ta.stoch.toFixed(0)}`,dir:'bull'}); }
+  else if (ta.stoch > 80) { bearScore += 10; reasons.push({n:`STOCH${ta.stoch.toFixed(0)}`,dir:'bear'}); }
+
+  // Digit dominance
+  const lowPct = (da.low / da.total) * 100;
+  const highPct = (da.high / da.total) * 100;
+  if (lowPct > 60) { bullScore += 12; reasons.push({n:`LOW-DOM${lowPct.toFixed(0)}%`,dir:'bull'}); }
+  if (highPct > 60) { bearScore += 12; reasons.push({n:`HIGH-DOM${highPct.toFixed(0)}%`,dir:'bear'}); }
+
+  // Streak bonus
+  if (da.curLow >= 3) { bullScore += da.curLow * 4; reasons.push({n:`STK-LOW${da.curLow}`,dir:'bull'}); }
+  if (da.curHigh >= 3) { bearScore += da.curHigh * 4; reasons.push({n:`STK-HIGH${da.curHigh}`,dir:'bear'}); }
+
+  // ADX strength filter
+  const adxBonus = ta.adx > 25 ? 1.15 : 1.0;
+  const total = bullScore + bearScore;
+  let confidence = total > 0 ? Math.max(bullScore, bearScore) / total * 100 : 50;
+  confidence = clamp(confidence * adxBonus, 20, 98);
+
+  const dir = bullScore >= bearScore ? 'OVER' : 'UNDER';
+  const signalText = dir === 'OVER' ? 'BUY OVER 4' : 'BUY UNDER 5';
+  const contractType = dir === 'OVER' ? 'DIGITOVER' : 'DIGITUNDER';
+  const barrier = dir === 'OVER' ? 4 : 5;
+
+  const threshold = S.aiThreshold || AI_THRESHOLDS[S.aiMode] || 60;
+  const tradeable = confidence >= threshold;
+
+  S.aiConfidence = confidence;
+  S.aiSignal = { signalText, contractType, barrier, confidence, tradeable, reasons };
+  aiLog(`Signal: ${signalText} | Conf: ${confidence.toFixed(1)}% | Tradeable: ${tradeable}`);
+  return S.aiSignal;
+}
+
+// ──────────────────────────────────────────────
+// 9. STRATEGY: OV4UN5 REVERSAL (from XML)
+// ──────────────────────────────────────────────
+// XML Origin: Ov4Un5Reversal.xml
+// Market: R_25, Over/Under digits
+// Logic: If last N digits all ≤4 → DIGITOVER 4
+//        If last N digits all ≥5 → DIGITUNDER 5
+// Martingale: 2x on loss | Reset on win
+// Take Profit: 4 wins | Stop Loss: $30
+function stratOv4Un5(digits, config = {}) {
+  const N = config.window || S.ov4Window;
+  const lastN = digits.slice(-N);
+  if (lastN.length < N) return null;
+  const allLow  = lastN.every(d => d <= 4);
+  const allHigh = lastN.every(d => d >= 5);
+  if (!allLow && !allHigh) return null;
+  const contractType = allLow ? 'DIGITOVER' : 'DIGITUNDER';
+  const barrier = allLow ? 4 : 5;
+  // Confidence boost with streak length
+  const streak = allLow ? lastN.filter(d=>d<=4).length : lastN.filter(d=>d>=5).length;
+  const confidence = clamp(52 + streak * 4, 50, 82);
+  return { contractType, barrier, confidence,
+    reason: allLow ? `${N} digits ≤4 (streak), expecting reversal OVER 4` : `${N} digits ≥5 (streak), expecting reversal UNDER 5`,
+    strategy: 'ov4un5', duration: 1, durationUnit: 't' };
+}
+
+// ──────────────────────────────────────────────
+// 10. STRATEGY: RISE/FALL REVERSAL
+// ──────────────────────────────────────────────
+// N consecutive FALL ticks → BUY CALL (RISE)
+// N consecutive RISE ticks → BUY PUT (FALL)
+function stratRiseFall(ticks, config = {}) {
+  const N = config.window || S.rfWindow;
+  const lastN = ticks.slice(-N);
+  if (lastN.length < N) return null;
+  const dirs = lastN.map(t => t.dir);
+  const allFall = dirs.every(d => d === 'dn');
+  const allRise = dirs.every(d => d === 'up');
+  if (!allFall && !allRise) return null;
+  const contractType = allFall ? 'CALL' : 'PUT';
+  const confidence = clamp(53 + N * 3, 50, 80);
+  return { contractType, barrier: null, confidence,
+    reason: allFall ? `${N} consecutive FALL ticks, reversal to RISE` : `${N} consecutive RISE ticks, reversal to FALL`,
+    strategy: 'risefall', duration: 5, durationUnit: 't' };
+}
+
+// ──────────────────────────────────────────────
+// 11. STRATEGY: AI CONFLUENCE
+// ──────────────────────────────────────────────
+function stratAIConfluence() {
+  if (!S.aiSignal) return null;
+  if (!S.aiSignal.tradeable) return null;
+  return { contractType: S.aiSignal.contractType, barrier: S.aiSignal.barrier,
+    confidence: S.aiSignal.confidence, reason: 'AI Confluence: multi-indicator agreement',
+    strategy: 'ai-confluence', duration: 1, durationUnit: 't' };
+}
+
+// ──────────────────────────────────────────────
+// 12. STRATEGY: DIGIT HOT/COLD
+// ──────────────────────────────────────────────
+function stratDigitHotCold() {
+  const da = analyzeDigits(200);
+  if (!da) return null;
+  // Find most cold digit (underrepresented)
+  const cold = da.cold;
+  // If cold digit is in 0-4 range → play OVER 4 (expecting low digits)
+  // If cold digit is in 5-9 range → play UNDER 5 (expecting high digits)
+  // Actually: if cold is ≤4, we might see more high digits → UNDER
+  const contractType = cold <= 4 ? 'DIGITUNDER' : 'DIGITOVER';
+  const barrier = cold <= 4 ? 5 : 4;
+  const coldPct = da.pcts[cold];
+  const deviation = 10 - coldPct; // expected is ~10%
+  if (deviation < 2) return null; // not significant
+  const confidence = clamp(50 + deviation * 2, 50, 78);
+  return { contractType, barrier, confidence,
+    reason: `Digit ${cold} cold at ${coldPct.toFixed(1)}% (expected ~10%), mean reversion`,
+    strategy: 'digit-hotcold', duration: 1, durationUnit: 't' };
+}
+
+// ──────────────────────────────────────────────
+// 13. GET SIGNAL FOR ACTIVE STRATEGY
+// ──────────────────────────────────────────────
+function getStrategySignal(stratId) {
+  stratId = stratId || S.activeStrategy;
+  switch(stratId) {
+    case 'ov4un5': return stratOv4Un5(S.digits);
+    case 'risefall': return stratRiseFall(S.ticks);
+    case 'ai-confluence': return stratAIConfluence();
+    case 'digit-hotcold': return stratDigitHotCold();
+    default: return null;
+  }
+}
+
+// ──────────────────────────────────────────────
+// 14. MARTINGALE ENGINE
+// ──────────────────────────────────────────────
+function getNextStake(initial, depth, multiplier = 2) {
+  return parseFloat((initial * Math.pow(multiplier, depth)).toFixed(2));
+}
+
+function onTradeWin(pnl, stratId, isVirtual = false) {
+  if (isVirtual) {
+    S.virtualWins++;
+    S.virtualPnl += pnl;
+    S.virtualMartDepth = 0;
+    S.virtualCurrentStake = S.virtualStake;
+    if (S.virtualPnl > S.virtualPeakPnl) S.virtualPeakPnl = S.virtualPnl;
+  } else {
+    S.sessionWins++;
+    S.sessionPnl += pnl;
+    S.runCount++;
+    S.martDepth = 0;
+    S.currentStake = S.initialStake;
+    if (S.sessionPnl > S.peakPnl) S.peakPnl = S.sessionPnl;
+    S.stratStats[stratId] = S.stratStats[stratId] || {w:0,l:0,pnl:0};
+    S.stratStats[stratId].w++;
+    S.stratStats[stratId].pnl += pnl;
+    S.pnlHistory.push(S.sessionPnl);
+    tradeLog({ ts: Date.now(), type: 'WIN', pnl: +pnl.toFixed(2), strat: stratId, runCount: S.runCount, martDepth: S.martDepth });
+    checkTakeProfit();
+    saveLogsToStorage();
+  }
+}
+
+function onTradeLoss(stake, stratId, isVirtual = false) {
+  if (isVirtual) {
+    S.virtualLosses++;
+    S.virtualPnl -= stake;
+    S.virtualMartDepth++;
+    S.virtualCurrentStake = getNextStake(S.virtualStake, S.virtualMartDepth);
+    const dd = S.virtualPeakPnl - S.virtualPnl;
+    if (dd > S.virtualMaxDD) S.virtualMaxDD = dd;
+  } else {
+    S.sessionLosses++;
+    S.sessionPnl -= stake;
+    S.runCount++;
+    S.martDepth++;
+    const maxD = parseInt(document.getElementById('r-max-depth').value)||6;
+    if (S.martDepth > maxD) { S.martDepth = maxD; toast('⚠ Max Martingale depth reached', 'loss'); }
+    const useMart = document.getElementById('r-martingale').checked;
+    S.currentStake = useMart ? getNextStake(S.initialStake, S.martDepth) : S.initialStake;
+    const dd = S.peakPnl - S.sessionPnl;
+    if (dd > S.maxDrawdown) S.maxDrawdown = dd;
+    S.stratStats[stratId] = S.stratStats[stratId] || {w:0,l:0,pnl:0};
+    S.stratStats[stratId].l++;
+    S.stratStats[stratId].pnl -= stake;
+    S.pnlHistory.push(S.sessionPnl);
+    tradeLog({ ts: Date.now(), type: 'LOSS', pnl: -stake, strat: stratId, runCount: S.runCount, martDepth: S.martDepth });
+    checkStopLoss();
+    saveLogsToStorage();
+  }
+}
+
+function checkStopLoss() {
+  const sl = parseFloat(document.getElementById('r-stoploss').value)||30;
+  if (S.sessionPnl <= -sl) {
+    toast(`🛑 Stop Loss hit at -$${sl}`, 'loss', 5000);
+    sysLog('STOP LOSS TRIGGERED — Auto trading paused', 'error');
+    S.autoTrading = false;
+    updateAutoTradingBtn();
+    S.emergencyStopped = true;
+  }
+}
+
+function checkTakeProfit() {
+  const tp = parseInt(document.getElementById('r-takeprofit').value)||4;
+  if (S.sessionWins >= tp && S.runCount > 0) {
+    toast(`🎯 Take Profit: ${tp} wins reached!`, 'win', 5000);
+    sysLog(`TAKE PROFIT: ${tp} wins achieved. Session P&L: ${S.sessionPnl.toFixed(2)}`, 'success');
+    S.autoTrading = false;
+    updateAutoTradingBtn();
+  }
+}
+
+// ──────────────────────────────────────────────
+// 15. TRADE EXECUTOR (Proposal → Buy)
+// ──────────────────────────────────────────────
+function buildProposal(signal, stake, symbol, duration, durationUnit) {
+  const p = {
+    proposal: 1,
+    contract_type: signal.contractType,
+    symbol: symbol || S.symbol,
+    duration: duration || signal.duration || 1,
+    duration_unit: durationUnit || signal.durationUnit || 't',
+    amount: parseFloat(stake).toFixed(2),
+    basis: 'stake',
+    currency: S.currency,
+    req_id: nextReqId()
+  };
+  if (signal.barrier !== null && signal.barrier !== undefined) {
+    p.barrier = signal.barrier;
+  }
+  return p;
+}
+
+let _pendingSignal = null;
+let _pendingStake = 0;
+
+function sendProposal(signal, stake) {
+  if (S.tradeInProgress) return;
+  _pendingSignal = signal;
+  _pendingStake = stake;
+  const proposal = buildProposal(signal, stake, S.symbol,
+    parseInt(document.getElementById('r-duration').value)||1, 't');
+  S.tradeInProgress = true;
+  sysLog(`Sending proposal: ${signal.contractType} @ ${signal.barrier || ''} stake $${stake}`, 'info');
+  send(proposal);
+}
+
+function handleProposal(msg) {
+  if (!msg.proposal || !_pendingSignal) {
+    S.tradeInProgress = false;
+    return;
+  }
+  const prop = msg.proposal;
+  if (!prop.id) { S.tradeInProgress = false; return; }
+  sysLog(`Proposal OK: id=${prop.id} payout=$${prop.payout}`, 'success');
+  // Execute buy
+  send({
+    buy: prop.id,
+    price: _pendingStake,
+    req_id: nextReqId()
+  });
+}
+
+function handleBuy(buy) {
+  if (!buy) { S.tradeInProgress = false; return; }
+  sysLog(`Trade bought: ${buy.contract_id} | ${buy.longcode}`, 'success');
+  showActiveTrade(buy);
+  // Subscribe to contract updates
+  send({
+    proposal_open_contract: 1,
+    contract_id: buy.contract_id,
+    subscribe: 1,
+    req_id: nextReqId()
+  });
+}
+
+function handlePOC(poc) {
+  if (!poc) return;
+  if (poc.is_expired || poc.is_sold) {
+    clearActiveTrade();
+    S.tradeInProgress = false;
+    const profit = parseFloat(poc.profit) || 0;
+    const stake = parseFloat(poc.buy_price) || _pendingStake;
+    const stratId = _pendingSignal ? _pendingSignal.strategy || S.activeStrategy : S.activeStrategy;
+    if (profit > 0) {
+      toast(`✅ WIN +$${profit.toFixed(2)}`, 'win');
+      onTradeWin(profit, stratId);
+    } else {
+      toast(`❌ LOSS -$${stake.toFixed(2)}`, 'loss');
+      onTradeLoss(stake, stratId);
+    }
+    updateAllUI();
+    // Unsubscribe
+    if (poc.id) send({ forget: poc.id, req_id: nextReqId() });
+    _pendingSignal = null;
+  }
+}
+
+function tryAutoTrade() {
+  if (S.digits.length < 10) return;
+  const stratId = document.getElementById('r-strategy').value || 'ov4un5';
+  const signal = getStrategySignal(stratId);
+  if (!signal) return;
+  const useAIFilter = document.getElementById('r-ai-filter').checked;
+  const minConf = parseFloat(document.getElementById('r-min-conf').value)||60;
+  if (useAIFilter && signal.confidence < minConf) {
+    aiLog(`Signal rejected: conf ${signal.confidence.toFixed(0)}% < threshold ${minConf}%`);
+    return;
+  }
+  const stake = S.currentStake;
+  sendProposal(signal, stake);
+}
+
+function manualTrade(contractType, barrier) {
+  if (S.isPaper) { toast('Connect live account to trade', 'info'); return; }
+  const stake = parseFloat(document.getElementById('r-stake').value)||0.5;
+  const dur = parseInt(document.getElementById('r-duration').value)||1;
+  const signal = { contractType, barrier, confidence: 100, reason: 'Manual trade', strategy: 'manual', duration: dur, durationUnit: 't' };
+  sendProposal(signal, stake);
+}
+
+function showActiveTrade(buy) {
+  const el = document.getElementById('active-trade-display');
+  el.style.display = 'block';
+  document.getElementById('at-type').textContent = buy.longcode || (_pendingSignal ? _pendingSignal.contractType : '--');
+  document.getElementById('at-stake').textContent = `$${(buy.buy_price||_pendingStake).toFixed(2)} stake`;
+  document.getElementById('at-timer').textContent = '⏳';
+}
+
+function clearActiveTrade() {
+  document.getElementById('active-trade-display').style.display = 'none';
+}
+
+// ──────────────────────────────────────────────
+// 16. VIRTUAL TRADE ENGINE
+// ──────────────────────────────────────────────
+const virtualQueue = new Set();
+
+async function tryVirtualTrade() {
+  if (virtualQueue.size > 0) return;
+  const stratId = document.getElementById('v-strategy').value || 'ov4un5';
+  const signal = getStrategySignal(stratId);
+  if (!signal) return;
+  const stake = S.virtualCurrentStake;
+  virtualQueue.add(1);
+  sysLog(`[VIRTUAL] ${signal.contractType} ${signal.barrier||''} $${stake.toFixed(2)}`, 'info');
+  await sleep(1000); // simulate 1 tick contract
+  // Simulate result based on signal confidence
+  const won = Math.random() * 100 < signal.confidence;
+  const pnl = won ? stake * 0.85 : stake;
+  if (won) {
+    onTradeWin(pnl, stratId, true);
+    toast(`[V] ✅ +$${pnl.toFixed(2)}`, 'win', 2000);
+    addVirtualTradeRow(signal.contractType, stake, pnl, 'win');
+  } else {
+    onTradeLoss(stake, stratId, true);
+    toast(`[V] ❌ -$${stake.toFixed(2)}`, 'loss', 2000);
+    addVirtualTradeRow(signal.contractType, stake, -stake, 'loss');
+  }
+  virtualQueue.delete(1);
+  updateVirtualUI();
+}
+
+function addVirtualTradeRow(type, stake, pnl, result) {
+  const el = document.getElementById('v-trade-list');
+  const row = document.createElement('div');
+  row.className = `trade-row ${result}`;
+  row.innerHTML = `
+    <div style="flex:1;">
+      <div style="font-size:11px;font-weight:600;">${type}</div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.35);">${new Date().toLocaleTimeString()}</div>
+    </div>
+    <div style="text-align:right;">
+      <div style="font-family:'JetBrains Mono';font-size:12px;color:${pnl>0?'var(--success)':'var(--danger)'};">${fmtMoney(pnl)}</div>
+      <div style="font-size:9px;color:rgba(255,255,255,0.35);">$${stake.toFixed(2)}</div>
+    </div>`;
+  el.insertBefore(row, el.firstChild);
+  if (el.children.length > 100) el.removeChild(el.lastChild);
+}
+
+// ──────────────────────────────────────────────
+// 17. ANALYSIS RUNNER
+// ──────────────────────────────────────────────
+let analysisRaf = null;
+function runAnalysisEngine() {
+  if (analysisRaf) cancelAnimationFrame(analysisRaf);
+  analysisRaf = requestAnimationFrame(() => {
+    const ai = runAIEngine();
+    updateDigitUI();
+    updateAIUI(ai);
+    updateStrategyUI();
+    updateDashUI();
+  });
+}
+
+// ──────────────────────────────────────────────
+// 18. UI UPDATE FUNCTIONS
+// ──────────────────────────────────────────────
+function updateConnDot(state) {
+  const dot = document.getElementById('conn-dot');
+  dot.className = `conn-dot${state==='live'?' live':state==='warn'?' warn':''}`;
+}
+
+function updateBalanceDisplay() {
+  const bal = S.isPaper ? S.balance.toFixed(2) : S.balance.toFixed(2);
+  document.getElementById('top-balance').textContent = `$${bal}`;
+  document.getElementById('top-mode').textContent = S.isPaper ? 'PAPER' : S.currency;
+  document.getElementById('real-balance-disp').textContent = `$${bal}`;
+  document.getElementById('real-currency').textContent = S.isPaper ? 'VIRTUAL USD' : S.currency;
+}
+
+function updateTickUI(quote, digit, dir) {
+  // Price display
+  const priceEl = document.getElementById('live-price');
+  const prev = S.prevQuote;
+  const change = quote - prev;
+  priceEl.textContent = parseFloat(quote).toFixed(parseInt(MARKET_DECIMALS[S.symbol]||'2'));
+  const chEl = document.getElementById('price-change');
+  chEl.textContent = `${change>=0?'+':''}${change.toFixed(parseInt(MARKET_DECIMALS[S.symbol]||'2'))}`;
+  chEl.className = `price-change ${dir==='up'?'up':'dn'}`;
+
+  // Last digit
+  document.getElementById('last-digit-badge').textContent = digit;
+  const dirEl = document.getElementById('tick-direction');
+  dirEl.textContent = dir === 'up' ? '▲ RISE' : dir === 'dn' ? '▼ FALL' : '= FLAT';
+  dirEl.className = `badge ${dir==='up'?'badge-green':dir==='dn'?'badge-red':'badge-cyan'}`;
+
+  // Tick stream
+  const stream = document.getElementById('tick-stream');
+  const chip = document.createElement('div');
+  chip.className = `tick-chip ${dir}`;
+  chip.textContent = digit;
+  stream.insertBefore(chip, stream.firstChild);
+  while (stream.children.length > 20) stream.removeChild(stream.lastChild);
+}
+
+function updateDashUI() {
+  // P&L
+  const pnlEl = document.getElementById('dash-pnl');
+  pnlEl.textContent = fmtMoney(S.sessionPnl);
+  pnlEl.className = `stat-val ${S.sessionPnl >= 0 ? 'gold' : 'red'}`;
+
+  // Win rate
+  const total = S.sessionWins + S.sessionLosses;
+  const wr = total > 0 ? (S.sessionWins / total * 100).toFixed(1) : '0.0';
+  document.getElementById('dash-wr').textContent = `${wr}%`;
+  document.getElementById('dash-trades').textContent = total;
+  document.getElementById('dash-conf').textContent = `${S.aiConfidence.toFixed(0)}%`;
+
+  // Martingale
+  document.getElementById('mart-depth-val').textContent = S.martDepth;
+  document.getElementById('mart-stake-val').textContent = S.currentStake.toFixed(2);
+  const bars = document.getElementById('mart-depth-bars');
+  bars.innerHTML = '';
+  for (let i = 0; i < 6; i++) {
+    const b = document.createElement('div');
+    b.className = `mart-step${i < S.martDepth ? ' active' : ''}`;
+    bars.appendChild(b);
+  }
+
+  // AI signal on dashboard
+  if (S.aiSignal) {
+    document.getElementById('ai-signal-text').textContent = S.aiSignal.tradeable ? `⚡ ${S.aiSignal.signalText}` : '⏸ WAITING FOR SIGNAL';
+    document.getElementById('ai-reason-text').textContent = S.aiSignal.reasons.slice(0,3).map(r=>r.n).join(' · ');
+    // Confidence ring
+    const pct = S.aiConfidence / 100;
+    const circ = 138.2;
+    document.getElementById('conf-ring').style.strokeDashoffset = circ * (1 - pct);
+    document.getElementById('conf-ring-val').textContent = `${S.aiConfidence.toFixed(0)}%`;
+
+    // Indicator pills on dashboard
+    const row = document.getElementById('indicator-row');
+    row.innerHTML = '';
+    (S.aiSignal.reasons||[]).slice(0,6).forEach(r => {
+      const pill = document.createElement('span');
+      pill.className = `ind-pill ind-${r.dir}`;
+      pill.textContent = r.n;
+      row.appendChild(pill);
+    });
+  }
+
+  // Recent trades
+  updateRecentTrades();
+}
+
+function updateRecentTrades() {
+  const el = document.getElementById('recent-trades');
+  if (S.tradeLogs.length === 0) {
+    el.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.2);font-size:11px;padding:20px 0;">No trades yet</div>';
+    return;
+  }
+  el.innerHTML = S.tradeLogs.slice(0,5).map(t => `
+    <div class="trade-row ${t.type==='WIN'?'win':'loss'}">
+      <div style="flex:1;">
+        <div style="font-size:11px;font-weight:600;">${t.strat||'—'}</div>
+        <div style="font-size:9px;color:rgba(255,255,255,0.3);">${new Date(t.ts).toLocaleTimeString()} · Depth ${t.martDepth||0}</div>
+      </div>
+      <div style="font-family:'JetBrains Mono';font-size:13px;color:${t.type==='WIN'?'var(--success)':'var(--danger)'};">${fmtMoney(t.pnl)}</div>
+    </div>`).join('');
+}
+
+function updateDigitUI() {
+  const da = analyzeDigits(S.digitWindow);
+  if (!da) return;
+  // Heatmap
+  const hm = document.getElementById('digit-heatmap');
+  if (hm.children.length !== 10) {
+    hm.innerHTML = '';
+    for (let i = 0; i < 10; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'digit-cell';
+      cell.innerHTML = `<span class="d-num">${i}</span><span class="d-pct" id="dp${i}">0%</span>`;
+      hm.appendChild(cell);
+    }
+  }
+  const maxPct = Math.max(...da.pcts);
+  const minPct = Math.min(...da.pcts);
+  da.pcts.forEach((p, i) => {
+    const cell = hm.children[i];
+    const norm = (p - minPct) / (maxPct - minPct + 0.001);
+    const r = Math.round(norm * 200 + 20);
+    const g = Math.round(100 - norm * 80);
+    cell.style.background = `rgba(${r},${g},50,${0.15 + norm * 0.35})`;
+    cell.style.borderColor = `rgba(${r},${g},50,${0.2 + norm * 0.4})`;
+    cell.style.color = norm > 0.7 ? '#fff' : 'rgba(255,255,255,0.7)';
+    const pctEl = cell.querySelector('.d-pct');
+    if (pctEl) pctEl.textContent = `${p.toFixed(1)}%`;
+  });
+
+  // Bar chart
+  const bars = document.getElementById('digit-bars');
+  bars.innerHTML = da.pcts.map((p, i) => {
+    const color = p > 12 ? 'var(--danger)' : p < 8 ? 'var(--cyber)' : 'var(--gold)';
+    return `<div class="digit-bar-row">
+      <span class="digit-bar-label">${i}</span>
+      <div class="digit-bar-track">
+        <div class="digit-bar-fill" style="width:${Math.min(p*5,100)}%;background:${color};">
+          <span class="digit-bar-pct">${p.toFixed(1)}%</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Stats
+  document.getElementById('hot-digit').textContent = da.hot;
+  document.getElementById('cold-digit').textContent = da.cold;
+  const eP = ((da.even/da.total)*100).toFixed(1);
+  const oP = ((da.odd/da.total)*100).toFixed(1);
+  const lP = ((da.low/da.total)*100).toFixed(1);
+  const hP = ((da.high/da.total)*100).toFixed(1);
+  document.getElementById('even-pct').textContent = `${eP}%`;
+  document.getElementById('odd-pct').textContent = `${oP}%`;
+  document.getElementById('low-pct').textContent = `${lP}%`;
+  document.getElementById('high-pct').textContent = `${hP}%`;
+  document.getElementById('streak-low').textContent = da.maxLow;
+  document.getElementById('streak-high').textContent = da.maxHigh;
+  document.getElementById('cur-low').textContent = da.curLow;
+  document.getElementById('cur-high').textContent = da.curHigh;
+}
+
+function updateAIUI(ai) {
+  if (!ai) return;
+  const pct = ai.confidence / 100;
+  const circ = 201.1;
+  const ring = document.getElementById('ai-ring');
+  ring.style.strokeDashoffset = circ * (1 - pct);
+  const col = ai.confidence > 70 ? 'var(--success)' : ai.confidence > 50 ? 'var(--gold)' : 'var(--danger)';
+  ring.style.stroke = col;
+  document.getElementById('ai-ring-val').textContent = `${ai.confidence.toFixed(0)}%`;
+  document.getElementById('ai-ring-val').style.color = col;
+  document.getElementById('ai-main-signal').textContent = ai.tradeable ? `⚡ ${ai.signalText}` : '⏸ SIGNAL BELOW THRESHOLD';
+  document.getElementById('ai-main-reason').textContent = ai.reasons.slice(0,4).map(r=>r.n).join(' · ');
+
+  // Indicator consensus
+  const cons = document.getElementById('indicator-consensus');
+  cons.innerHTML = ai.reasons.slice(0,8).map(r => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+      <span style="font-size:11px;">${r.n}</span>
+      <span class="badge badge-${r.dir==='bull'?'green':r.dir==='bear'?'red':'cyan'}">${r.dir}</span>
+    </div>`).join('');
+
+  // AI features
+  const feat = document.getElementById('ai-features');
+  const feats = [
+    {n:'RSI Momentum', v: TA.rsi(TA.prices(), 14).toFixed(1), unit:'%', color: TA.rsi(TA.prices(),14) < 40 ? 'var(--success)' : TA.rsi(TA.prices(),14) > 60 ? 'var(--danger)' : 'var(--gold)'},
+    {n:'AI Confidence', v: ai.confidence.toFixed(1), unit:'%', color: col},
+    {n:'Digit Low%', v: ((S.digits.slice(-100).filter(d=>d<=4).length/Math.max(S.digits.slice(-100).length,1))*100).toFixed(1), unit:'%', color:'var(--cyber)'},
+    {n:'ATR Volatility', v: TA.atr(14).toFixed(5), unit:'', color:'rgba(255,255,255,0.6)'},
+    {n:'Stochastic', v: TA.stoch(TA.prices(), 14).toFixed(1), unit:'%', color:'var(--gold)'},
+    {n:'Market Momentum', v: TA.momentum(TA.prices(), 10) >= 0 ? '+BULL' : '-BEAR', unit:'', color: TA.momentum(TA.prices(),10)>=0?'var(--success)':'var(--danger)'},
+  ];
+  feat.innerHTML = feats.map(f => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;background:rgba(255,255,255,0.02);border-radius:6px;margin-bottom:4px;">
+      <span style="font-size:11px;color:rgba(255,255,255,0.5);">${f.n}</span>
+      <span style="font-family:'JetBrains Mono';font-size:12px;color:${f.color};">${f.v}${f.unit}</span>
+    </div>`).join('');
+}
+
+function updateStrategyUI() {
+  ['ov4un5','risefall','ai-confluence','digit-hotcold'].forEach(id => {
+    const st = S.stratStats[id] || {w:0,l:0,pnl:0};
+    const el = document.getElementById(`${id==='ov4un5'?'ov4':id==='risefall'?'rf':id==='ai-confluence'?'ai-conf':'hc'}-stats`);
+    if (el) el.textContent = `W:${st.w} L:${st.l} PnL:${st.pnl>=0?'+':''}${st.pnl.toFixed(2)}`;
+  });
+  // Current stake for ov4un5
+  document.getElementById('ov4-stake-disp').textContent = `$${S.currentStake.toFixed(2)}`;
+  document.getElementById('rf-stake-disp').textContent = `$${S.currentStake.toFixed(2)}`;
+
+  // Overall
+  const allPnl = Object.values(S.stratStats).reduce((a,b)=>a+b.pnl,0);
+  const allWins = Object.values(S.stratStats).reduce((a,b)=>a+b.w,0);
+  const allLosses = Object.values(S.stratStats).reduce((a,b)=>a+b.l,0);
+  document.getElementById('total-pnl').textContent = fmtMoney(allPnl);
+  const pf = allLosses > 0 ? (allWins / allLosses).toFixed(2) : '∞';
+  document.getElementById('profit-factor').textContent = pf;
+
+  // Best strategy
+  let best = null, bestPnl = -Infinity;
+  Object.entries(S.stratStats).forEach(([k,v]) => { if (v.pnl > bestPnl) { bestPnl = v.pnl; best = k; }});
+  document.getElementById('best-strat').textContent = best || '—';
+}
+
+function updateVirtualUI() {
+  document.getElementById('v-pnl').textContent = fmtMoney(S.virtualPnl);
+  document.getElementById('v-pnl').className = `stat-val ${S.virtualPnl>=0?'cyan':'red'}`;
+  const total = S.virtualWins + S.virtualLosses;
+  document.getElementById('v-wr').textContent = total > 0 ? `${(S.virtualWins/total*100).toFixed(1)}%` : '0.0%';
+  document.getElementById('v-trades').textContent = total;
+  document.getElementById('v-dd').textContent = S.virtualMaxDD.toFixed(2);
+}
+
+function updateAnalyticsUI() {
+  const total = S.sessionWins + S.sessionLosses;
+  document.getElementById('an-total').textContent = total;
+  document.getElementById('an-wr').textContent = total > 0 ? `${(S.sessionWins/total*100).toFixed(1)}%` : '0%';
+
+  // Average win/loss from logs
+  const wins = S.tradeLogs.filter(t=>t.type==='WIN').map(t=>t.pnl);
+  const losses = S.tradeLogs.filter(t=>t.type==='LOSS').map(t=>Math.abs(t.pnl));
+  const avgW = wins.length > 0 ? wins.reduce((a,b)=>a+b,0)/wins.length : 0;
+  const avgL = losses.length > 0 ? losses.reduce((a,b)=>a+b,0)/losses.length : 0;
+  document.getElementById('an-avgw').textContent = `+$${avgW.toFixed(2)}`;
+  document.getElementById('an-avgl').textContent = `-$${avgL.toFixed(2)}`;
+
+  // Streaks
+  let maxWs = 0, maxLs = 0, curWs = 0, curLs = 0;
+  [...S.tradeLogs].reverse().forEach(t => {
+    if (t.type === 'WIN') { curWs++; curLs = 0; maxWs = Math.max(maxWs, curWs); }
+    else { curLs++; curWs = 0; maxLs = Math.max(maxLs, curLs); }
+  });
+  document.getElementById('an-wstreak').textContent = maxWs;
+  document.getElementById('an-lstreak').textContent = maxLs;
+  document.getElementById('an-maxdd').textContent = S.maxDrawdown.toFixed(2);
+  const pf = avgL > 0 ? (avgW / avgL).toFixed(2) : '∞';
+  document.getElementById('an-pf').textContent = pf;
+
+  drawPnLChart();
+}
+
+function drawPnLChart() {
+  const canvas = document.getElementById('pnl-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 300;
+  const H = 160;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  ctx.clearRect(0, 0, W, H);
+
+  const data = S.pnlHistory.slice(-80);
+  if (data.length < 2) return;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pad = 20;
+  const pw = W - pad*2;
+  const ph = H - pad*2;
+
+  const xOf = i => pad + (i / (data.length-1)) * pw;
+  const yOf = v => pad + ph - ((v - min) / range) * ph;
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad + (i/4)*ph;
+    ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W-pad, y); ctx.stroke();
+  }
+
+  // Zero line
+  const zeroY = yOf(0);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(pad, zeroY); ctx.lineTo(W-pad, zeroY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, pad, 0, H-pad);
+  grad.addColorStop(0, 'rgba(245,158,11,0.3)');
+  grad.addColorStop(1, 'rgba(245,158,11,0.0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.moveTo(xOf(0), yOf(data[0]));
+  data.forEach((v, i) => ctx.lineTo(xOf(i), yOf(v)));
+  ctx.lineTo(xOf(data.length-1), H-pad);
+  ctx.lineTo(xOf(0), H-pad);
+  ctx.closePath();
+  ctx.fill();
+
+  // Line
+  ctx.strokeStyle = '#f59e0b';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  data.forEach((v, i) => { if(i===0) ctx.moveTo(xOf(i),yOf(v)); else ctx.lineTo(xOf(i),yOf(v)); });
+  ctx.stroke();
+
+  // Current value dot
+  const last = data[data.length-1];
+  ctx.fillStyle = last >= 0 ? 'var(--success)' : 'var(--danger)';
+  ctx.beginPath();
+  ctx.arc(xOf(data.length-1), yOf(last), 4, 0, Math.PI*2);
+  ctx.fill();
+}
+
+function renderTradeLogs() {
+  const el = document.getElementById('trade-log-list');
+  if (!el) return;
+  el.innerHTML = S.tradeLogs.slice(0,100).map(t => `
+    <div class="log-entry">
+      <div class="log-dot ${t.type==='WIN'?'success':'error'}"></div>
+      <div class="log-time">${new Date(t.ts).toLocaleTimeString()}</div>
+      <div class="log-msg">
+        <span style="color:${t.type==='WIN'?'var(--success)':'var(--danger)'};">${t.type}</span>
+        <span style="color:rgba(255,255,255,0.5);"> · ${t.strat||'?'} · </span>
+        <span style="font-family:'JetBrains Mono';font-size:10px;">${fmtMoney(t.pnl)}</span>
+        <span style="color:rgba(255,255,255,0.3);font-size:9px;"> · D${t.martDepth||0}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderSystemLog() {
+  const el = document.getElementById('system-log-list');
+  if (!el) return;
+  el.innerHTML = S.systemLogs.slice(0,100).map(e => `
+    <div class="log-entry">
+      <div class="log-dot ${e.level}"></div>
+      <div class="log-time">${new Date(e.ts).toLocaleTimeString()}</div>
+      <div class="log-msg" style="font-size:10px;color:rgba(255,255,255,0.6);">${e.msg}</div>
+    </div>`).join('');
+}
+
+function renderAILog() {
+  const el = document.getElementById('ai-log-list');
+  if (!el) return;
+  el.innerHTML = S.aiLogs.slice(0,100).map(e => `
+    <div class="log-entry">
+      <div class="log-dot info"></div>
+      <div class="log-time">${new Date(e.ts).toLocaleTimeString()}</div>
+      <div class="log-msg" style="font-size:10px;color:rgba(6,214,160,0.8);">${e.msg}</div>
+    </div>`).join('');
+}
+
+function updateAllUI() {
+  updateBalanceDisplay();
+  updateDigitUI();
+  runAIEngine();
+  updateDashUI();
+  updateStrategyUI();
+  updateVirtualUI();
+  updateAnalyticsUI();
+}
+
+// ──────────────────────────────────────────────
+// 19. CONTROL FUNCTIONS
+// ──────────────────────────────────────────────
+function navTo(section, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`s-${section}`).classList.add('active');
+  btn.classList.add('active');
+  if (section === 'analytics') updateAnalyticsUI();
+  if (section === 'digits') updateDigitUI();
+}
+
+function toggleAutoTrading() {
+  if (S.emergencyStopped) {
+    toast('Emergency stop active. Reset first.', 'info');
+    return;
+  }
+  if (S.isPaper && !S.authorized) {
+    toast('Switch to live account to auto-trade', 'info');
+    startVirtualTrading();
+    return;
+  }
+  S.autoTrading = !S.autoTrading;
+  updateAutoTradingBtn();
+  if (S.autoTrading) {
+    toast('⚡ Auto trading STARTED', 'win');
+    sysLog('Auto trading started', 'success');
+    S.initialStake = parseFloat(document.getElementById('r-stake').value)||0.5;
+    S.currentStake = S.initialStake;
+    S.stopLoss = parseFloat(document.getElementById('r-stoploss').value)||30;
+    S.activeStrategy = document.getElementById('r-strategy').value;
+    document.getElementById('manual-trade-section').style.display = 'none';
+  } else {
+    toast('Auto trading STOPPED', 'info');
+    sysLog('Auto trading stopped', 'warn');
+  }
+}
+
+function updateAutoTradingBtn() {
+  const btn = document.getElementById('auto-trade-btn');
+  if (S.autoTrading) {
+    btn.textContent = '■ STOP AUTO TRADING';
+    btn.className = 'btn btn-red btn-full';
+  } else {
+    btn.textContent = '⚡ START AUTO TRADING';
+    btn.className = 'btn btn-gold btn-full';
+  }
+}
+
+function emergencyStop() {
+  S.autoTrading = false;
+  S.virtualRunning = false;
+  S.emergencyStopped = true;
+  S.tradeInProgress = false;
+  updateAutoTradingBtn();
+  toast('🛑 EMERGENCY STOP ACTIVATED', 'loss', 4000);
+  sysLog('EMERGENCY STOP — All trading halted', 'error');
+}
+
+function startVirtualTrading() {
+  S.virtualRunning = true;
+  S.virtualStake = parseFloat(document.getElementById('v-stake').value)||0.5;
+  S.virtualCurrentStake = S.virtualStake;
+  S.ov4Window = parseInt(document.getElementById('v-window').value)||4;
+  toast('🎮 Virtual simulation started', 'info');
+  sysLog('Virtual trading started', 'success');
+}
+
+function stopVirtualTrading() {
+  S.virtualRunning = false;
+  toast('Virtual simulation stopped', 'info');
+}
+
+function resetVirtual() {
+  S.virtualPnl = 0; S.virtualWins = 0; S.virtualLosses = 0;
+  S.virtualMaxDD = 0; S.virtualPeakPnl = 0;
+  S.virtualMartDepth = 0; S.virtualCurrentStake = S.virtualStake;
+  document.getElementById('v-trade-list').innerHTML = '';
+  updateVirtualUI();
+  toast('Virtual stats reset', 'info');
+}
+
+function setAIMode(mode, el) {
+  S.aiMode = mode;
+  S.aiThreshold = AI_THRESHOLDS[mode];
+  document.querySelectorAll('.ai-mode-card').forEach(c => c.classList.remove('sel-mode'));
+  el.classList.add('sel-mode');
+  document.getElementById('ai-threshold').value = S.aiThreshold;
+  document.getElementById('threshold-val').textContent = `${S.aiThreshold}%`;
+  toast(`AI mode: ${mode.toUpperCase()}`, 'info');
+}
+
+function updateAIThreshold(val) {
+  S.aiThreshold = parseInt(val);
+  document.getElementById('threshold-val').textContent = `${val}%`;
+}
+
+function setDigitWindow(w, el) {
+  S.digitWindow = w;
+  document.querySelectorAll('#digit-window-row .mode-chip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  updateDigitUI();
+}
+
+function selectOv4Window(n, el) {
+  S.ov4Window = n;
+  document.querySelectorAll('#ov4-window-row .mode-chip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function selectRfWindow(n, el) {
+  S.rfWindow = n;
+  document.querySelectorAll('#rf-window-row .mode-chip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function resetStrategy(id) {
+  S.stratStats[id] = {w:0,l:0,pnl:0};
+  if (id === 'ov4un5') { S.martDepth = 0; S.currentStake = S.initialStake; }
+  updateStrategyUI();
+  toast(`Strategy ${id} reset`, 'info');
+}
+
+function switchLogTab(tab, el) {
+  ['trade','system','ai'].forEach(t => {
+    document.getElementById(`log-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('#s-logs .mode-chip').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function exportLogs(format) {
+  const data = {
+    tradeLogs: S.tradeLogs,
+    systemLogs: S.systemLogs,
+    sessionPnl: S.sessionPnl,
+    stats: S.stratStats,
+    exportTime: new Date().toISOString()
+  };
+  let content, mime, ext;
+  if (format === 'csv') {
+    const rows = [['Time','Type','Strategy','PnL','MartDepth']];
+    S.tradeLogs.forEach(t => rows.push([new Date(t.ts).toISOString(), t.type, t.strat||'?', t.pnl, t.martDepth||0]));
+    content = rows.map(r => r.join(',')).join('\n');
+    mime = 'text/csv'; ext = 'csv';
+  } else {
+    content = JSON.stringify(data, null, 2);
+    mime = 'application/json'; ext = 'json';
+  }
+  const blob = new Blob([content], {type: mime});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `axiom_logs_${Date.now()}.${ext}`;
+  a.click();
+  toast(`Exported ${ext.toUpperCase()}`, 'win');
+}
+
+function clearLogs() {
+  if (!confirm('Clear all logs?')) return;
+  S.tradeLogs = []; S.systemLogs = []; S.aiLogs = [];
+  renderTradeLogs(); renderSystemLog(); renderAILog();
+  localStorage.removeItem('axiom_tradeLogs');
+  toast('Logs cleared', 'info');
+}
+
+// Reset functions
+function softReset() {
+  S.sessionPnl = 0; S.sessionWins = 0; S.sessionLosses = 0;
+  S.martDepth = 0; S.currentStake = S.initialStake;
+  S.pnlHistory = [0]; S.emergencyStopped = false;
+  updateAllUI(); toast('Soft reset complete', 'info');
+}
+
+function tradingReset() {
+  softReset();
+  S.autoTrading = false; updateAutoTradingBtn();
+  S.tradeInProgress = false; _pendingSignal = null;
+  clearActiveTrade();
+  toast('Trading engine reset', 'info');
+  sysLog('Trading engine reset', 'warn');
+}
+
+function hardReset() {
+  if (!confirm('Hard reset will clear ALL data. Continue?')) return;
+  tradingReset();
+  S.tradeLogs = []; S.systemLogs = []; S.aiLogs = [];
+  S.stratStats = {'ov4un5':{w:0,l:0,pnl:0},'risefall':{w:0,l:0,pnl:0},'ai-confluence':{w:0,l:0,pnl:0},'digit-hotcold':{w:0,l:0,pnl:0}};
+  S.maxDrawdown = 0; S.peakPnl = 0;
+  localStorage.clear();
+  updateAllUI(); toast('Hard reset complete', 'info');
+  sysLog('Hard reset executed', 'error');
+}
+
+// Symbol change
+document.getElementById('symbol-select').addEventListener('change', function() {
+  S.symbol = this.value;
+  S.ticks = []; S.digits = [];
+  S.lastQuote = 0; S.prevQuote = 0;
+  sysLog(`Symbol changed to ${S.symbol}`, 'info');
+  if (S.ws && S.ws.readyState === 1) {
+    subscribeToTicks();
+  }
+});
+
+// Strategy change → show/hide manual buttons
+document.getElementById('r-strategy').addEventListener('change', function() {
+  document.getElementById('manual-trade-section').style.display = this.value === 'manual' ? 'block' : 'none';
+});
+
+// ──────────────────────────────────────────────
+// 20. APP LAUNCH FUNCTIONS
+// ──────────────────────────────────────────────
+function launchPaper() {
+  S.isPaper = true;
+  S.token = '';
+  S.balance = 10000;
+  document.getElementById('setup-modal').style.display = 'none';
+  document.getElementById('top-mode').textContent = 'PAPER';
+  updateBalanceDisplay();
+  toast('Paper mode active — $10,000 virtual balance', 'info');
+  sysLog('Paper mode started', 'success');
+  connect('', document.getElementById('app-id-input').value || '1089');
+  loadFromStorage();
+  initDB();
+}
+
+function launchLive() {
+  const token = document.getElementById('api-token-input').value.trim();
+  const appId = document.getElementById('app-id-input').value.trim() || '1089';
+  if (!token) { toast('Enter your API token first', 'loss'); return; }
+  S.token = token;
+  S.appId = appId;
+  S.isPaper = false;
+  document.getElementById('setup-modal').style.display = 'none';
+  localStorage.setItem('axiom_appId', appId);
+  sysLog(`Connecting to Deriv API (app_id: ${appId})...`, 'info');
+  connect(token, appId);
+  loadFromStorage();
+  initDB();
+}
+
+// Auto-restore session
+function tryAutoRestore() {
+  const savedAppId = localStorage.getItem('axiom_appId');
+  if (savedAppId) document.getElementById('app-id-input').value = savedAppId;
+  const savedToken = sessionStorage.getItem('axiom_token');
+  if (savedToken) {
+    document.getElementById('api-token-input').value = savedToken;
+  }
+}
+
+// ──────────────────────────────────────────────
+// 21. PWA SERVICE WORKER REGISTRATION
+// ──────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').then(reg => {
+      sysLog('Service Worker registered', 'success');
+    }).catch(() => {});
+  });
+}
+
+// Prevent pull-to-refresh and bounce
+document.body.addEventListener('touchmove', e => { if (e.target === document.body) e.preventDefault(); }, {passive:false});
+
+// ──────────────────────────────────────────────
+// 22. STARTUP
+// ──────────────────────────────────────────────
+(function init() {
+  tryAutoRestore();
+  sysLog('AXIOM DIGIT AI v2.0 initialized', 'success');
+  sysLog('Strategies loaded: Ov4Un5Reversal (XML), RiseFall, AI-Confluence, Digit Hot/Cold', 'info');
+  // Init digit heatmap empty state
+  updateDigitUI();
+})();
+
+</script>
+</body>
+</html>

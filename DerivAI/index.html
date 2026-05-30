@@ -1,0 +1,2869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#000d1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="DerivAI — Autonomous Quant Trading Terminal for Synthetic Volatility Indices">
+<title>DerivAI Terminal</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* =============================================
+   DESIGN SYSTEM — QUANT DARK TERMINAL
+   ============================================= */
+:root {
+  --bg-void:    #030810;
+  --bg-deep:    #060f1e;
+  --bg-panel:   rgba(6, 18, 38, 0.85);
+  --bg-card:    rgba(8, 22, 46, 0.9);
+  --bg-input:   rgba(0, 20, 50, 0.8);
+  --border:     rgba(0, 210, 255, 0.12);
+  --border-hot: rgba(0, 210, 255, 0.45);
+  --cyan:       #00d4ff;
+  --cyan-dim:   rgba(0, 212, 255, 0.6);
+  --cyan-glow:  rgba(0, 212, 255, 0.15);
+  --green:      #00ff88;
+  --green-dim:  rgba(0, 255, 136, 0.6);
+  --red:        #ff3366;
+  --red-dim:    rgba(255, 51, 102, 0.6);
+  --orange:     #ff9900;
+  --yellow:     #ffe600;
+  --purple:     #b366ff;
+  --text-primary:   #e0f0ff;
+  --text-secondary: rgba(180, 210, 240, 0.65);
+  --text-muted:     rgba(120, 160, 200, 0.45);
+  --font-display: 'Chakra Petch', monospace;
+  --font-data:    'JetBrains Mono', monospace;
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 14px;
+  --shadow-panel: 0 8px 40px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border);
+  --shadow-glow:  0 0 20px rgba(0, 212, 255, 0.2);
+  --transition:   all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-height: 60px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  font-size: 14px;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-data);
+  background: var(--bg-void);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Animated glow orbs */
+body::after {
+  content: '';
+  position: fixed;
+  top: -200px; left: -200px;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%);
+  animation: orb1 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes orb1 {
+  0%, 100% { transform: translate(0,0); }
+  33%       { transform: translate(300px, 200px); }
+  66%       { transform: translate(100px, 500px); }
+}
+
+/* =============================================
+   SCROLLBARS
+   ============================================= */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hot); border-radius: 2px; }
+
+/* =============================================
+   TOP BAR
+   ============================================= */
+#topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: rgba(3, 8, 16, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+}
+
+.logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--cyan);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 0 20px rgba(0,212,255,0.5);
+}
+
+.logo span { color: var(--green); }
+
+.conn-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  transition: background 0.3s;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px currentColor;
+}
+.conn-dot.connected { background: var(--green); }
+.conn-dot.connecting { background: var(--orange); animation: pulse 1s infinite; }
+
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.market-selector {
+  flex: 1;
+  max-width: 160px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--cyan);
+  font-family: var(--font-data);
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  cursor: pointer;
+  outline: none;
+}
+
+.market-selector:focus { border-color: var(--border-hot); }
+
+.balance-pill {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  color: var(--green);
+  white-space: nowrap;
+}
+
+.balance-pill span { color: var(--text-secondary); font-size: 0.65rem; }
+
+/* =============================================
+   BOTTOM NAV
+   ============================================= */
+#bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--nav-height);
+  display: flex;
+  background: rgba(3, 8, 16, 0.97);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  z-index: 100;
+}
+
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.58rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: var(--transition);
+  padding: 6px 2px;
+  position: relative;
+}
+
+.nav-btn .nav-icon { font-size: 1.1rem; transition: var(--transition); }
+
+.nav-btn.active {
+  color: var(--cyan);
+}
+
+.nav-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--cyan);
+  border-radius: 0 0 2px 2px;
+  box-shadow: 0 0 10px var(--cyan);
+}
+
+.nav-btn:hover { color: var(--cyan-dim); }
+
+/* =============================================
+   MAIN CONTENT
+   ============================================= */
+#app {
+  position: relative;
+  z-index: 1;
+  padding-top: 56px;
+  padding-bottom: calc(var(--nav-height) + 8px);
+  min-height: 100vh;
+}
+
+.section {
+  display: none;
+  padding: 12px;
+  animation: fadeIn 0.25s ease;
+}
+
+.section.active { display: block; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* =============================================
+   CARDS & PANELS
+   ============================================= */
+.card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  backdrop-filter: blur(12px);
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-panel);
+}
+
+.card-title {
+  font-family: var(--font-display);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* =============================================
+   STAT GRID
+   ============================================= */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.stat-cell {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-cell::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.stat-cell:hover::before { opacity: 1; }
+
+.stat-label {
+  font-size: 0.6rem;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
+
+.stat-value.pos { color: var(--green); }
+.stat-value.neg { color: var(--red); }
+.stat-value.info { color: var(--cyan); }
+
+/* =============================================
+   BUTTONS
+   ============================================= */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.05);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.btn:hover::after { opacity: 1; }
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-cyan {
+  background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(0,212,255,0.08));
+  border: 1px solid rgba(0,212,255,0.5);
+  color: var(--cyan);
+  box-shadow: 0 0 15px rgba(0,212,255,0.1);
+}
+
+.btn-cyan:hover { box-shadow: 0 0 25px rgba(0,212,255,0.25); border-color: var(--cyan); }
+
+.btn-green {
+  background: linear-gradient(135deg, rgba(0,255,136,0.2), rgba(0,255,136,0.08));
+  border: 1px solid rgba(0,255,136,0.5);
+  color: var(--green);
+  box-shadow: 0 0 15px rgba(0,255,136,0.1);
+}
+
+.btn-green:hover { box-shadow: 0 0 25px rgba(0,255,136,0.25); }
+
+.btn-red {
+  background: linear-gradient(135deg, rgba(255,51,102,0.2), rgba(255,51,102,0.08));
+  border: 1px solid rgba(255,51,102,0.5);
+  color: var(--red);
+}
+
+.btn-orange {
+  background: linear-gradient(135deg, rgba(255,153,0,0.2), rgba(255,153,0,0.08));
+  border: 1px solid rgba(255,153,0,0.5);
+  color: var(--orange);
+}
+
+.btn-sm { padding: 5px 10px; font-size: 0.65rem; }
+.btn-lg { padding: 12px 24px; font-size: 0.82rem; }
+.btn-full { width: 100%; }
+
+/* =============================================
+   INPUTS
+   ============================================= */
+.input-group { margin-bottom: 10px; }
+.input-label { display: block; font-size: 0.6rem; letter-spacing: 1.5px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 5px; }
+
+input, select, textarea {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-data);
+  font-size: 0.82rem;
+  padding: 8px 10px;
+  width: 100%;
+  outline: none;
+  transition: var(--transition);
+}
+
+input:focus, select:focus { border-color: var(--border-hot); box-shadow: 0 0 0 2px var(--cyan-glow); }
+
+select { cursor: pointer; }
+select option { background: var(--bg-deep); }
+
+/* Toggle */
+.toggle-wrap { display: flex; align-items: center; gap: 10px; }
+.toggle {
+  position: relative;
+  width: 40px; height: 22px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  transition: 0.3s;
+}
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  left: 2px; top: 2px;
+  width: 16px; height: 16px;
+  background: var(--text-muted);
+  border-radius: 50%;
+  transition: 0.3s;
+}
+.toggle input:checked + .toggle-slider { background: rgba(0,212,255,0.2); border-color: var(--cyan); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(18px); background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+
+/* Range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  padding: 0;
+  height: 4px;
+  background: var(--border);
+  border: none;
+  border-radius: 2px;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  background: var(--cyan);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--cyan);
+}
+
+/* =============================================
+   TICK STREAM
+   ============================================= */
+.tick-stream {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  padding: 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-height: 60px;
+  max-height: 80px;
+  overflow: hidden;
+}
+
+.tick-dot {
+  width: 24px; height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.tick-dot.up   { background: rgba(0,255,136,0.15); border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+.tick-dot.down { background: rgba(255,51,102,0.15); border: 1px solid rgba(255,51,102,0.3); color: var(--red); }
+.tick-dot.new  { animation: tickFlash 0.3s ease; }
+
+@keyframes tickFlash { from{transform:scale(1.3);box-shadow:0 0 12px currentColor} to{transform:scale(1)} }
+
+/* =============================================
+   DIGIT HEATMAP
+   ============================================= */
+.digit-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.digit-cell {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 4px;
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.digit-cell::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 0 0 var(--radius) var(--radius);
+  transition: height 0.5s ease;
+}
+
+.digit-cell .digit-num { font-family: var(--font-display); font-size: 1rem; font-weight: 700; }
+.digit-cell .digit-pct { font-size: 0.6rem; color: var(--text-secondary); margin-top: 2px; }
+.digit-cell .digit-count { font-size: 0.55rem; color: var(--text-muted); }
+
+/* Heatmap color levels */
+.heat-0 { color: var(--text-muted); } .heat-0::before { background: var(--text-muted); height: 2px; }
+.heat-1 { color: #2196f3; } .heat-1::before { background: #2196f3; height: 3px; }
+.heat-2 { color: var(--cyan); } .heat-2::before { background: var(--cyan); height: 5px; }
+.heat-3 { color: #66ff99; } .heat-3::before { background: #66ff99; height: 7px; }
+.heat-4 { color: var(--green); } .heat-4::before { background: var(--green); height: 10px; }
+.heat-5 { color: var(--yellow); } .heat-5::before { background: var(--yellow); height: 13px; }
+.heat-6 { color: var(--orange); } .heat-6::before { background: var(--orange); height: 16px; }
+.heat-7 { color: var(--red); } .heat-7::before { background: var(--red); height: 20px; }
+
+/* =============================================
+   AI CONFIDENCE GAUGE
+   ============================================= */
+.ai-gauge-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+}
+
+.ai-gauge {
+  width: 130px; height: 65px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-gauge svg { width: 100%; height: 100%; }
+
+.ai-score {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-align: center;
+  margin-top: -4px;
+}
+
+.ai-label {
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.ai-signal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-top: 8px;
+}
+
+.ai-signal.rise { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.4); color: var(--green); }
+.ai-signal.fall { background: rgba(255,51,102,0.1); border: 1px solid rgba(255,51,102,0.4); color: var(--red); }
+.ai-signal.wait { background: rgba(255,153,0,0.1); border: 1px solid rgba(255,153,0,0.4); color: var(--orange); }
+.ai-signal.none { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted); }
+
+/* =============================================
+   MARTINGALE DEPTH
+   ============================================= */
+.mart-depth {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.mart-step {
+  width: 18px; height: 18px;
+  border-radius: 3px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: var(--transition);
+}
+
+.mart-step.active { background: rgba(255,153,0,0.2); border-color: var(--orange); color: var(--orange); }
+.mart-step.loss { background: rgba(255,51,102,0.2); border-color: var(--red); color: var(--red); }
+
+/* =============================================
+   TRADE LOG TABLE
+   ============================================= */
+.trade-log-wrap {
+  overflow-x: auto;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.trade-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.65rem;
+  min-width: 500px;
+}
+
+.trade-table th {
+  font-family: var(--font-display);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-size: 0.58rem;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  position: sticky;
+  top: 0;
+  background: var(--bg-deep);
+  z-index: 5;
+}
+
+.trade-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text-secondary);
+  vertical-align: middle;
+}
+
+.trade-table tr:hover td { background: rgba(0,212,255,0.03); }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 20px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  font-family: var(--font-display);
+  letter-spacing: 0.5px;
+}
+
+.badge-rise { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+.badge-fall { background: rgba(255,51,102,0.1); border: 1px solid rgba(255,51,102,0.3); color: var(--red); }
+.badge-win  { background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); color: var(--green); }
+.badge-loss { background: rgba(255,51,102,0.1); border: 1px solid rgba(255,51,102,0.3); color: var(--red); }
+.badge-virt { background: rgba(0,212,255,0.1); border: 1px solid rgba(0,212,255,0.3); color: var(--cyan); }
+.badge-real { background: rgba(255,153,0,0.1); border: 1px solid rgba(255,153,0,0.3); color: var(--orange); }
+
+/* =============================================
+   CHART AREA
+   ============================================= */
+.mini-chart {
+  width: 100%;
+  height: 70px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mini-chart canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* =============================================
+   MODE TABS
+   ============================================= */
+.tab-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  background: var(--bg-card);
+  padding: 4px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 6px 8px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.tab-btn.active { background: var(--cyan-glow); color: var(--cyan); border: 1px solid var(--border-hot); }
+
+/* =============================================
+   PROGRESS BAR
+   ============================================= */
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+}
+
+/* =============================================
+   REAL-TIME TICKER
+   ============================================= */
+.price-ticker {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 1px;
+}
+
+.price-change {
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
+.price-change.up { color: var(--green); }
+.price-change.down { color: var(--red); }
+
+/* =============================================
+   STRATEGY DISPLAY
+   ============================================= */
+.strategy-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+}
+
+.strategy-icon { font-size: 1rem; }
+
+.strategy-info { flex: 1; }
+.strategy-name { font-family: var(--font-display); font-size: 0.72rem; font-weight: 600; color: var(--text-primary); }
+.strategy-desc { font-size: 0.6rem; color: var(--text-muted); margin-top: 1px; }
+
+.strategy-status {
+  font-size: 0.6rem;
+  font-family: var(--font-display);
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.strategy-status.active { background: rgba(0,255,136,0.1); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+.strategy-status.idle   { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); }
+
+/* =============================================
+   NOTIFICATION TOAST
+   ============================================= */
+#toast-container {
+  position: fixed;
+  bottom: calc(var(--nav-height) + 12px);
+  left: 12px; right: 12px;
+  z-index: 200;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.toast {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 0.72rem;
+  color: var(--text-primary);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-panel);
+  pointer-events: auto;
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+  max-width: 340px;
+}
+
+.toast.success { border-color: rgba(0,255,136,0.4); }
+.toast.error   { border-color: rgba(255,51,102,0.4); }
+.toast.info    { border-color: rgba(0,212,255,0.4); }
+.toast.warn    { border-color: rgba(255,153,0,0.4); }
+
+@keyframes toastIn  { from{opacity:0;transform:translateX(20px)} to{opacity:1;transform:translateX(0)} }
+@keyframes toastOut { from{opacity:1} to{opacity:0;pointer-events:none} }
+
+/* =============================================
+   MODAL
+   ============================================= */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(8px);
+  z-index: 150;
+  display: flex;
+  align-items: flex-end;
+  padding: 12px;
+}
+
+.modal-overlay.hidden { display: none; }
+
+.modal-sheet {
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 20px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cyan);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* =============================================
+   LOG ENTRY
+   ============================================= */
+.log-entry {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-size: 0.65rem;
+  line-height: 1.4;
+}
+
+.log-time { color: var(--text-muted); flex-shrink: 0; width: 72px; }
+.log-type { flex-shrink: 0; width: 50px; font-weight: 600; }
+.log-type.info  { color: var(--cyan); }
+.log-type.trade { color: var(--green); }
+.log-type.error { color: var(--red); }
+.log-type.warn  { color: var(--orange); }
+.log-type.ai    { color: var(--purple); }
+.log-msg { color: var(--text-secondary); }
+
+/* =============================================
+   SEQUENCE DISPLAY
+   ============================================= */
+.seq-display {
+  display: flex;
+  gap: 5px;
+  padding: 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.seq-arrow {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border: 2px solid;
+}
+
+.seq-arrow.up   { background: rgba(0,255,136,0.1); border-color: rgba(0,255,136,0.4); color: var(--green); }
+.seq-arrow.down { background: rgba(255,51,102,0.1); border-color: rgba(255,51,102,0.4); color: var(--red); }
+.seq-arrow.new  { animation: seqPop 0.4s ease; }
+
+@keyframes seqPop { 0%{transform:scale(0)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+
+/* Responsive */
+@media (min-width: 480px) {
+  #topbar { padding: 0 20px; gap: 12px; }
+  .section { padding: 16px; }
+  .stat-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+@media (min-width: 768px) {
+  .digit-grid { grid-template-columns: repeat(10, 1fr); }
+  .stat-grid { grid-template-columns: repeat(4, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header id="topbar">
+  <div class="logo">Deriv<span>AI</span></div>
+  <div class="conn-dot" id="conn-dot"></div>
+  <select class="market-selector" id="market-select" onchange="App.switchMarket(this.value)">
+    <option value="R_10">Volatility 10</option>
+    <option value="R_25">Volatility 25</option>
+    <option value="R_50" selected>Volatility 50</option>
+    <option value="R_75">Volatility 75</option>
+    <option value="R_100">Volatility 100</option>
+    <option value="1HZ10V">Vol 10 (1s)</option>
+    <option value="1HZ25V">Vol 25 (1s)</option>
+    <option value="1HZ50V">Vol 50 (1s)</option>
+    <option value="1HZ75V">Vol 75 (1s)</option>
+    <option value="1HZ100V">Vol 100 (1s)</option>
+    <option value="JD10">Jump 10</option>
+    <option value="JD25">Jump 25</option>
+    <option value="JD50">Jump 50</option>
+    <option value="JD75">Jump 75</option>
+    <option value="JD100">Jump 100</option>
+  </select>
+  <div class="balance-pill"><span>BAL </span><span id="balance-display">0.00</span></div>
+</header>
+
+<!-- MAIN APP -->
+<main id="app">
+
+  <!-- =================== DASHBOARD =================== -->
+  <section class="section active" id="sec-dashboard">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div style="font-size:0.62rem;letter-spacing:2px;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px" id="dash-market-name">Volatility 50</div>
+          <div class="price-ticker" id="dash-price">0.00000</div>
+          <div style="display:flex;gap:10px;margin-top:4px;align-items:center">
+            <span class="price-change up" id="dash-change">+0.00%</span>
+            <span style="font-size:0.6rem;color:var(--text-muted)" id="dash-last-digit">Last: —</span>
+          </div>
+        </div>
+        <div class="ai-gauge-wrap">
+          <div class="ai-gauge">
+            <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 60 A 50 50 0 0 1 110 60" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="8" stroke-linecap="round"/>
+              <path id="gauge-arc" d="M10 60 A 50 50 0 0 1 110 60" fill="none" stroke="var(--cyan)" stroke-width="8" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157" style="transition:stroke-dashoffset 0.6s ease,stroke 0.4s"/>
+              <text x="60" y="55" text-anchor="middle" font-family="'Chakra Petch',monospace" font-size="18" font-weight="700" fill="var(--text-primary)" id="gauge-num">0</text>
+            </svg>
+          </div>
+          <div class="ai-label">AI CONFIDENCE</div>
+          <div class="ai-signal none" id="ai-signal-badge">⊘ NO SIGNAL</div>
+        </div>
+      </div>
+      <div class="mini-chart" style="margin-top:10px">
+        <canvas id="price-chart"></canvas>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <div class="stat-label">Session P&L</div>
+        <div class="stat-value" id="stat-pnl">$0.00</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value info" id="stat-winrate">0%</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Total Trades</div>
+        <div class="stat-value" id="stat-trades">0</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-label">Streak</div>
+        <div class="stat-value" id="stat-streak">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📡 Tick Stream</div>
+      <div class="tick-stream" id="tick-stream"></div>
+      <div style="margin-top:8px;display:flex;gap:8px">
+        <div style="flex:1">
+          <div class="stat-label">Streak</div>
+          <div class="seq-display" id="seq-display" style="flex-wrap:wrap;max-height:40px;overflow:hidden"></div>
+        </div>
+        <div style="text-align:right">
+          <div class="stat-label">Count</div>
+          <div style="font-family:var(--font-display);font-size:1rem;color:var(--orange)" id="streak-count">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎯 Martingale Engine</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div>
+          <div class="stat-label">Current Stake</div>
+          <div style="font-family:var(--font-display);font-size:1.2rem;color:var(--cyan)" id="mart-stake">$0.35</div>
+        </div>
+        <div>
+          <div class="stat-label">Depth</div>
+          <div class="mart-depth" id="mart-depth-display">
+            <div class="mart-step">1</div><div class="mart-step">2</div><div class="mart-step">3</div>
+            <div class="mart-step">4</div><div class="mart-step">5</div><div class="mart-step">6</div>
+          </div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="mart-progress" style="width:0%;background:linear-gradient(90deg,var(--cyan),var(--orange))"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== DIGIT ANALYSIS =================== -->
+  <section class="section" id="sec-digits">
+    <div class="card">
+      <div class="card-title">🔢 Last Digit Distribution</div>
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="DigitUI.setWindow(100,this)">100</button>
+        <button class="tab-btn" onclick="DigitUI.setWindow(500,this)">500</button>
+        <button class="tab-btn" onclick="DigitUI.setWindow(1000,this)">1K</button>
+        <button class="tab-btn" onclick="DigitUI.setWindow(3000,this)">3K</button>
+      </div>
+      <div class="digit-grid" id="digit-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📊 Statistical Analysis</div>
+      <div class="stat-grid">
+        <div class="stat-cell">
+          <div class="stat-label">Hot Digits</div>
+          <div class="stat-value pos" id="hot-digits">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Cold Digits</div>
+          <div class="stat-value neg" id="cold-digits">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Odd Ratio</div>
+          <div class="stat-value info" id="odd-ratio">50%</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Even Ratio</div>
+          <div class="stat-value info" id="even-ratio">50%</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">High Ratio</div>
+          <div class="stat-value" id="high-ratio">50%</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Low Ratio</div>
+          <div class="stat-value" id="low-ratio">50%</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Max Repeat</div>
+          <div class="stat-value" id="max-repeat">—</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-label">Anomaly</div>
+          <div class="stat-value" id="anomaly-score">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔮 Probability Matrix</div>
+      <div id="prob-matrix" style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px"></div>
+    </div>
+  </section>
+
+  <!-- =================== AI CONTROL =================== -->
+  <section class="section" id="sec-ai">
+    <div class="card">
+      <div class="card-title">🤖 AI Decision Engine</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:center">
+        <div class="ai-gauge-wrap" style="padding:0">
+          <div class="ai-gauge">
+            <svg viewBox="0 0 120 70" xmlns="http://www.w3.org/2000/svg">
+              <path d="M10 60 A 50 50 0 0 1 110 60" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="8" stroke-linecap="round"/>
+              <path id="ai-gauge-arc2" d="M10 60 A 50 50 0 0 1 110 60" fill="none" stroke="var(--cyan)" stroke-width="8" stroke-linecap="round" stroke-dasharray="157" stroke-dashoffset="157" style="transition:stroke-dashoffset 0.6s ease,stroke 0.4s"/>
+              <text x="60" y="55" text-anchor="middle" font-family="'Chakra Petch',monospace" font-size="18" font-weight="700" fill="var(--text-primary)" id="ai-gauge-num2">0</text>
+            </svg>
+          </div>
+          <div class="ai-label">CONFIDENCE</div>
+        </div>
+        <div>
+          <div class="stat-label">Signal</div>
+          <div class="ai-signal none" id="ai-signal2" style="margin-bottom:8px">⊘ STANDBY</div>
+          <div class="stat-label" style="margin-top:8px">Reason</div>
+          <div style="font-size:0.65rem;color:var(--text-secondary);margin-top:3px;line-height:1.5" id="ai-reason">Analyzing market conditions...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚙️ AI Mode</div>
+      <div class="tab-row">
+        <button class="tab-btn" onclick="AIEngine.setMode('conservative',this)">Conserv.</button>
+        <button class="tab-btn active" onclick="AIEngine.setMode('balanced',this)">Balanced</button>
+        <button class="tab-btn" onclick="AIEngine.setMode('aggressive',this)">Aggress.</button>
+        <button class="tab-btn" onclick="AIEngine.setMode('hyper',this)">Hyper</button>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Min Confidence Threshold: <span id="conf-thresh-val" style="color:var(--cyan)">65%</span></label>
+        <input type="range" min="40" max="95" value="65" oninput="AIEngine.setThreshold(this.value)" id="conf-thresh-range">
+      </div>
+      <div class="toggle-wrap" style="margin-top:8px">
+        <label class="toggle"><input type="checkbox" id="ai-enabled" checked onchange="AIEngine.toggle(this.checked)"><span class="toggle-slider"></span></label>
+        <span style="font-size:0.72rem;color:var(--text-secondary)">AI Auto-Trade Enabled</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🧠 AI Factor Weights</div>
+      <div id="ai-factors" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📈 Strategy Signals</div>
+      <div id="strategy-signals" style="display:flex;flex-direction:column;gap:5px"></div>
+    </div>
+  </section>
+
+  <!-- =================== TRADING =================== -->
+  <section class="section" id="sec-trade">
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="TradeUI.setMode('virtual',this)">Virtual</button>
+      <button class="tab-btn" onclick="TradeUI.setMode('real',this)">Real</button>
+    </div>
+
+    <!-- Virtual Mode -->
+    <div id="virtual-panel">
+      <div class="card">
+        <div class="card-title">🎮 Virtual Trading</div>
+        <div class="input-group">
+          <label class="input-label">Base Stake ($)</label>
+          <input type="number" id="virt-stake" value="0.35" min="0.35" step="0.01" placeholder="0.35">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Ticks Duration</label>
+          <select id="virt-ticks">
+            <option value="1">1 Tick</option>
+            <option value="2">2 Ticks</option>
+            <option value="3">3 Ticks</option>
+            <option value="4">4 Ticks</option>
+            <option value="5" selected>5 Ticks</option>
+            <option value="6">6 Ticks</option>
+            <option value="7">7 Ticks</option>
+            <option value="8">8 Ticks</option>
+            <option value="9">9 Ticks</option>
+            <option value="10">10 Ticks</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+          <button class="btn btn-green btn-lg btn-full" onclick="TradeEngine.manualTrade('CALL','virtual')">▲ RISE</button>
+          <button class="btn btn-red btn-lg btn-full" onclick="TradeEngine.manualTrade('PUT','virtual')">▼ FALL</button>
+        </div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-cyan btn-full" onclick="TradeEngine.startAuto('virtual')">▶ AUTO TRADE</button>
+          <button class="btn btn-orange btn-full" onclick="TradeEngine.stop('virtual')">■ STOP</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Virtual Session</div>
+        <div class="stat-grid">
+          <div class="stat-cell"><div class="stat-label">V-Balance</div><div class="stat-value info" id="virt-balance">$1000.00</div></div>
+          <div class="stat-cell"><div class="stat-label">V-Profit</div><div class="stat-value" id="virt-profit">$0.00</div></div>
+          <div class="stat-cell"><div class="stat-label">V-Trades</div><div class="stat-value" id="virt-trades">0</div></div>
+          <div class="stat-cell"><div class="stat-label">V-Win%</div><div class="stat-value pos" id="virt-winrate">0%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Real Mode -->
+    <div id="real-panel" style="display:none">
+      <div class="card">
+        <div class="card-title" style="color:var(--orange)">⚡ Real Trading — USE WITH CAUTION</div>
+        <div class="input-group">
+          <label class="input-label">Deriv API Token</label>
+          <input type="password" id="api-token" placeholder="Enter API token...">
+        </div>
+        <button class="btn btn-cyan btn-full" style="margin-bottom:10px" onclick="WSManager.authorize()">🔐 Authorize</button>
+        <div class="input-group">
+          <label class="input-label">Base Stake ($)</label>
+          <input type="number" id="real-stake" value="0.35" min="0.35" step="0.01">
+        </div>
+        <div class="input-group">
+          <label class="input-label">Ticks Duration</label>
+          <select id="real-ticks">
+            <option value="1">1 Tick</option>
+            <option value="3">3 Ticks</option>
+            <option value="5" selected>5 Ticks</option>
+            <option value="10">10 Ticks</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+          <button class="btn btn-green btn-lg btn-full" onclick="TradeEngine.manualTrade('CALL','real')">▲ RISE</button>
+          <button class="btn btn-red btn-lg btn-full" onclick="TradeEngine.manualTrade('PUT','real')">▼ FALL</button>
+        </div>
+        <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-orange btn-full" onclick="TradeEngine.startAuto('real')">▶ AUTO (REAL)</button>
+          <button class="btn btn-red btn-full" onclick="TradeEngine.stop('real')">■ STOP ALL</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Real Session</div>
+        <div class="stat-grid">
+          <div class="stat-cell"><div class="stat-label">Balance</div><div class="stat-value info" id="real-balance">—</div></div>
+          <div class="stat-cell"><div class="stat-label">P&L</div><div class="stat-value" id="real-pnl">$0.00</div></div>
+          <div class="stat-cell"><div class="stat-label">Trades</div><div class="stat-value" id="real-trades">0</div></div>
+          <div class="stat-cell"><div class="stat-label">Win%</div><div class="stat-value pos" id="real-winrate">0%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Martingale Config -->
+    <div class="card">
+      <div class="card-title">♻️ Martingale Config</div>
+      <div class="input-group">
+        <label class="input-label">Multiplier: <span id="mart-mult-val" style="color:var(--cyan)">2.05x</span></label>
+        <input type="range" min="1.5" max="3.0" step="0.05" value="2.05" oninput="MartingaleEngine.setMultiplier(this.value)">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Max Depth</label>
+        <select id="mart-max-depth" onchange="MartingaleEngine.setMaxDepth(this.value)">
+          <option value="3">3 Steps</option>
+          <option value="4">4 Steps</option>
+          <option value="5" selected>5 Steps</option>
+          <option value="6">6 Steps</option>
+          <option value="8">8 Steps</option>
+        </select>
+      </div>
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" id="mart-enabled" checked onchange="MartingaleEngine.toggle(this.checked)"><span class="toggle-slider"></span></label>
+        <span style="font-size:0.72rem;color:var(--text-secondary)">Martingale Recovery Enabled</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== STRATEGY =================== -->
+  <section class="section" id="sec-strategy">
+    <div class="card">
+      <div class="card-title">🎯 Core Strategy — Rise/Fall Reversal</div>
+      <div class="input-group">
+        <label class="input-label">Reversal Trigger (consecutive ticks)</label>
+        <select id="strategy-ticks" onchange="StrategyEngine.setReversalTicks(this.value)">
+          <option value="3">3 Ticks Reversal</option>
+          <option value="4">4 Ticks Reversal</option>
+          <option value="5" selected>5 Ticks Reversal</option>
+          <option value="6">6 Ticks Reversal</option>
+          <option value="7">7 Ticks Reversal</option>
+          <option value="8">8 Ticks Reversal</option>
+        </select>
+      </div>
+      <div style="margin-bottom:10px">
+        <div class="stat-label" style="margin-bottom:6px">Active Strategies</div>
+        <div class="strategy-bar">
+          <div class="strategy-icon">📈</div>
+          <div class="strategy-info">
+            <div class="strategy-name">Consecutive FALL → RISE</div>
+            <div class="strategy-desc">N consecutive falls triggers a RISE (CALL) entry</div>
+          </div>
+          <div class="strategy-status active" id="strat-fall-rise">ACTIVE</div>
+        </div>
+        <div class="strategy-bar">
+          <div class="strategy-icon">📉</div>
+          <div class="strategy-info">
+            <div class="strategy-name">Consecutive RISE → FALL</div>
+            <div class="strategy-desc">N consecutive rises triggers a FALL (PUT) entry</div>
+          </div>
+          <div class="strategy-status active" id="strat-rise-fall">ACTIVE</div>
+        </div>
+        <div class="strategy-bar">
+          <div class="strategy-icon">🔀</div>
+          <div class="strategy-info">
+            <div class="strategy-name">AI Volatility Filter</div>
+            <div class="strategy-desc">Filters low-confidence setups before execution</div>
+          </div>
+          <div class="strategy-status active" id="strat-ai-filter">ACTIVE</div>
+        </div>
+        <div class="strategy-bar">
+          <div class="strategy-icon">🎰</div>
+          <div class="strategy-info">
+            <div class="strategy-name">Digit Rarity Bias</div>
+            <div class="strategy-desc">Weights entries toward statistically rare digits</div>
+          </div>
+          <div class="strategy-status idle" id="strat-digit-bias">IDLE</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🛡️ Risk Management</div>
+      <div class="input-group">
+        <label class="input-label">Max Daily Loss ($)</label>
+        <input type="number" id="max-daily-loss" value="10" min="1" step="0.5">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Max Consecutive Losses</label>
+        <input type="number" id="max-consec-losses" value="6" min="2" max="12">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Take Profit ($)</label>
+        <input type="number" id="take-profit" value="5" min="1" step="0.5">
+      </div>
+      <div class="input-group">
+        <label class="input-label">Max Trades per Session</label>
+        <input type="number" id="max-trades" value="100" min="5" max="500">
+      </div>
+      <div class="toggle-wrap" style="margin-top:4px">
+        <label class="toggle"><input type="checkbox" id="emergency-stop" onchange="RiskManager.toggleEmergency(this.checked)"><span class="toggle-slider"></span></label>
+        <span style="font-size:0.72rem;color:var(--red)">Emergency Stop Active</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔧 System Controls</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="btn btn-cyan btn-sm" onclick="App.softReset()">↺ Soft Reset</button>
+        <button class="btn btn-orange btn-sm" onclick="App.hardReset()">⚡ Hard Reset</button>
+        <button class="btn btn-cyan btn-sm" onclick="WSManager.reconnect()">📡 Reconnect</button>
+        <button class="btn btn-red btn-sm" onclick="App.emergencyStop()">🆘 EMERGENCY</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- =================== LOGS =================== -->
+  <section class="section" id="sec-logs">
+    <div class="card">
+      <div class="card-title">📜 System Log</div>
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="LogUI.showTab('system',this)">System</button>
+        <button class="tab-btn" onclick="LogUI.showTab('trades',this)">Trades</button>
+        <button class="tab-btn" onclick="LogUI.showTab('ai',this)">AI</button>
+      </div>
+
+      <!-- System logs -->
+      <div id="log-system" style="max-height:350px;overflow-y:auto">
+        <div id="system-log-entries"></div>
+      </div>
+
+      <!-- Trade log table -->
+      <div id="log-trades" style="display:none">
+        <div class="trade-log-wrap">
+          <table class="trade-table">
+            <thead>
+              <tr>
+                <th>Time</th><th>Type</th><th>Contract</th><th>Stake</th><th>P&L</th><th>AI%</th><th>Mode</th>
+              </tr>
+            </thead>
+            <tbody id="trade-log-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AI log -->
+      <div id="log-ai" style="display:none;max-height:350px;overflow-y:auto">
+        <div id="ai-log-entries"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-cyan btn-sm" onclick="Logger.download('json')">⬇ JSON</button>
+      <button class="btn btn-cyan btn-sm" onclick="Logger.download('csv')">⬇ CSV</button>
+      <button class="btn btn-red btn-sm" onclick="Logger.clearAll()">🗑 Clear Logs</button>
+    </div>
+  </section>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav id="bottom-nav">
+  <button class="nav-btn active" onclick="App.navigate('dashboard',this)">
+    <span class="nav-icon">📊</span>Dashboard
+  </button>
+  <button class="nav-btn" onclick="App.navigate('digits',this)">
+    <span class="nav-icon">🔢</span>Digits
+  </button>
+  <button class="nav-btn" onclick="App.navigate('ai',this)">
+    <span class="nav-icon">🤖</span>AI
+  </button>
+  <button class="nav-btn" onclick="App.navigate('trade',this)">
+    <span class="nav-icon">💹</span>Trade
+  </button>
+  <button class="nav-btn" onclick="App.navigate('strategy',this)">
+    <span class="nav-icon">🎯</span>Strategy
+  </button>
+  <button class="nav-btn" onclick="App.navigate('logs',this)">
+    <span class="nav-icon">📜</span>Logs
+  </button>
+</nav>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- MODAL -->
+<div class="modal-overlay hidden" id="modal">
+  <div class="modal-sheet">
+    <div class="modal-title" id="modal-title">Confirm</div>
+    <div id="modal-body" style="color:var(--text-secondary);font-size:0.78rem;margin-bottom:16px;line-height:1.6"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-red btn-full" id="modal-confirm">Confirm</button>
+      <button class="btn btn-cyan btn-full" onclick="App.closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =============================================
+   DERIVAI TERMINAL — CORE ENGINE v1.0
+   ============================================= */
+
+'use strict';
+
+/* =============================================
+   CONFIG
+   ============================================= */
+const Config = {
+  APP_ID: 1089,
+  WS_URL: 'wss://ws.binaryws.com/websockets/v3',
+  DEFAULT_MARKET: 'R_50',
+  TICK_HISTORY_COUNT: 3000,
+  RECONNECT_DELAY: 3000,
+  MAX_RECONNECT: 15,
+  PING_INTERVAL: 30000,
+  VERSION: '1.0.0',
+  PAYOUT_RATIO: 0.87,   // ~87% payout for Rise/Fall
+};
+
+/* =============================================
+   STATE MANAGEMENT
+   ============================================= */
+const State = {
+  connected: false,
+  authorized: false,
+  currentMarket: Config.DEFAULT_MARKET,
+  ticks: [],           // Full tick history objects
+  prices: [],          // Price values for chart
+  lastDigits: [],      // Array of last digits (0-9)
+  currentPrice: 0,
+  prevPrice: 0,
+  balance: 0,
+  currency: 'USD',
+
+  // Trading state
+  tradeMode: 'virtual',   // 'virtual' | 'real'
+  autoTrading: false,
+  isTrading: false,
+  virtualBalance: 1000,
+  virtualProfit: 0,
+  realProfit: 0,
+
+  // Session stats
+  totalTrades: 0,
+  wins: 0,
+  losses: 0,
+  streak: 0,
+  streakDir: null,     // 'W' | 'L'
+  consecutiveLosses: 0,
+  dailyLoss: 0,
+
+  // Tick direction tracking
+  tickDirections: [],   // 'up' | 'down'
+  currentStreakDir: null,
+  currentStreakCount: 0,
+
+  // AI state
+  aiEnabled: true,
+  aiMode: 'balanced',
+  aiThreshold: 65,
+  aiConfidence: 0,
+  aiSignal: null,   // 'CALL' | 'PUT' | null
+  aiReason: '',
+
+  // Martingale state
+  martMultiplier: 2.05,
+  martMaxDepth: 5,
+  martEnabled: true,
+  martDepth: 0,
+  martBaseStake: 0.35,
+  martCurrentStake: 0.35,
+
+  // Risk
+  maxDailyLoss: 10,
+  maxConsecLosses: 6,
+  takeProfit: 5,
+  maxTrades: 100,
+  emergencyStop: false,
+
+  // Digit analysis window
+  digitWindow: 100,
+
+  // Active trade timeout
+  pendingTrade: null,
+  pendingTicksLeft: 0,
+  pendingDirection: null,
+  pendingStartPrice: null,
+  pendingStake: 0,
+  pendingMode: 'virtual',
+
+  // Log data
+  tradeLogs: [],
+  systemLogs: [],
+  aiLogs: [],
+};
+
+/* =============================================
+   INDEXEDDB — PERSISTENCE
+   ============================================= */
+const DB = {
+  db: null,
+
+  async init() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open('DerivAI_v1', 2);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains('trades')) {
+          db.createObjectStore('trades', { keyPath: 'id', autoIncrement: true });
+        }
+        if (!db.objectStoreNames.contains('settings')) {
+          db.createObjectStore('settings', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('logs')) {
+          db.createObjectStore('logs', { keyPath: 'id', autoIncrement: true });
+        }
+      };
+      req.onsuccess = (e) => { DB.db = e.target.result; resolve(); };
+      req.onerror = () => reject(req.error);
+    });
+  },
+
+  async put(store, data) {
+    if (!DB.db) return;
+    return new Promise((res) => {
+      const tx = DB.db.transaction(store, 'readwrite');
+      tx.objectStore(store).put(data);
+      tx.oncomplete = res;
+    });
+  },
+
+  async getAll(store) {
+    if (!DB.db) return [];
+    return new Promise((res) => {
+      const tx = DB.db.transaction(store, 'readonly');
+      const req = tx.objectStore(store).getAll();
+      req.onsuccess = () => res(req.result);
+      req.onerror = () => res([]);
+    });
+  },
+
+  async clear(store) {
+    if (!DB.db) return;
+    return new Promise((res) => {
+      const tx = DB.db.transaction(store, 'readwrite');
+      tx.objectStore(store).clear();
+      tx.oncomplete = res;
+    });
+  },
+
+  async loadSettings() {
+    const rows = await DB.getAll('settings');
+    rows.forEach(r => {
+      if (r.key in State) State[r.key] = r.value;
+    });
+  },
+
+  async saveSetting(key, value) {
+    await DB.put('settings', { key, value });
+  },
+};
+
+/* =============================================
+   LOGGER
+   ============================================= */
+const Logger = {
+  _write(type, msg, category = 'system') {
+    const entry = {
+      time: new Date().toISOString(),
+      type,
+      msg,
+      category,
+      timestamp: Date.now(),
+    };
+
+    if (category === 'trade') {
+      State.tradeLogs.unshift(entry);
+      if (State.tradeLogs.length > 500) State.tradeLogs.pop();
+    } else if (category === 'ai') {
+      State.aiLogs.unshift(entry);
+      if (State.aiLogs.length > 300) State.aiLogs.pop();
+    } else {
+      State.systemLogs.unshift(entry);
+      if (State.systemLogs.length > 300) State.systemLogs.pop();
+    }
+
+    LogUI.appendEntry(entry);
+    DB.put('logs', entry).catch(() => {});
+  },
+
+  info(msg)  { this._write('info', msg, 'system'); },
+  error(msg) { this._write('error', msg, 'system'); },
+  warn(msg)  { this._write('warn', msg, 'system'); },
+  trade(msg) { this._write('trade', msg, 'trade'); },
+  ai(msg)    { this._write('ai', msg, 'ai'); },
+
+  download(format) {
+    const data = [...State.tradeLogs, ...State.systemLogs, ...State.aiLogs];
+    let content, filename, type;
+
+    if (format === 'json') {
+      content = JSON.stringify(data, null, 2);
+      filename = `derivai_logs_${Date.now()}.json`;
+      type = 'application/json';
+    } else {
+      const rows = data.map(e => `${e.time},${e.type},${e.category},"${e.msg}"`);
+      content = 'time,type,category,message\n' + rows.join('\n');
+      filename = `derivai_logs_${Date.now()}.csv`;
+      type = 'text/csv';
+    }
+
+    const blob = new Blob([content], { type });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    Toast.show('Logs downloaded', 'success');
+  },
+
+  clearAll() {
+    State.tradeLogs = [];
+    State.systemLogs = [];
+    State.aiLogs = [];
+    DB.clear('logs');
+    document.getElementById('system-log-entries').innerHTML = '';
+    document.getElementById('trade-log-body').innerHTML = '';
+    document.getElementById('ai-log-entries').innerHTML = '';
+    Toast.show('Logs cleared', 'info');
+  },
+};
+
+/* =============================================
+   WEBSOCKET MANAGER
+   ============================================= */
+const WSManager = {
+  ws: null,
+  reconnectCount: 0,
+  pingTimer: null,
+  reconnectTimer: null,
+  subscriptionId: null,
+  historyReqPending: false,
+
+  connect() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) return;
+    UI.setConnStatus('connecting');
+    Logger.info('Connecting to Deriv WebSocket API...');
+
+    const url = `${Config.WS_URL}?app_id=${Config.APP_ID}`;
+    this.ws = new WebSocket(url);
+
+    this.ws.onopen = () => {
+      this.reconnectCount = 0;
+      UI.setConnStatus('connected');
+      Logger.info('WebSocket connected');
+      Toast.show('Connected to Deriv API', 'success');
+      this.startPing();
+      this.subscribeMarket(State.currentMarket);
+      this.getHistory(State.currentMarket);
+    };
+
+    this.ws.onmessage = (e) => this.handleMessage(JSON.parse(e.data));
+
+    this.ws.onerror = () => {
+      UI.setConnStatus('disconnected');
+      Logger.error('WebSocket error');
+    };
+
+    this.ws.onclose = () => {
+      UI.setConnStatus('disconnected');
+      this.stopPing();
+      Logger.warn('WebSocket disconnected. Reconnecting...');
+      this.scheduleReconnect();
+    };
+  },
+
+  handleMessage(msg) {
+    if (msg.error) {
+      Logger.error(`API Error: ${msg.error.message || JSON.stringify(msg.error)}`);
+      return;
+    }
+
+    switch (msg.msg_type) {
+      case 'tick':
+        TickEngine.processTick(msg.tick);
+        break;
+      case 'history':
+        TickEngine.loadHistory(msg.history);
+        break;
+      case 'authorize':
+        this.handleAuthorize(msg.authorize);
+        break;
+      case 'buy':
+        TradeEngine.handleBuyResponse(msg);
+        break;
+      case 'proposal_open_contract':
+        TradeEngine.handleContractUpdate(msg.proposal_open_contract);
+        break;
+      case 'balance':
+        if (msg.balance) {
+          State.balance = parseFloat(msg.balance.balance);
+          State.currency = msg.balance.currency;
+          UI.updateBalance();
+        }
+        break;
+      case 'ping':
+        break; // pong handled
+    }
+  },
+
+  send(data) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(data));
+    }
+  },
+
+  subscribeMarket(symbol) {
+    if (this.subscriptionId) this.unsubscribe(this.subscriptionId);
+    this.send({ ticks: symbol, subscribe: 1 });
+    Logger.info(`Subscribed to ${symbol}`);
+  },
+
+  unsubscribe(id) {
+    this.send({ forget: id });
+    this.subscriptionId = null;
+  },
+
+  getHistory(symbol) {
+    this.send({
+      ticks_history: symbol,
+      end: 'latest',
+      count: Config.TICK_HISTORY_COUNT,
+      style: 'ticks',
+    });
+    Logger.info(`Fetching ${Config.TICK_HISTORY_COUNT} ticks history for ${symbol}`);
+  },
+
+  authorize() {
+    const token = document.getElementById('api-token').value.trim();
+    if (!token) { Toast.show('Enter API token first', 'error'); return; }
+    this.send({ authorize: token });
+    Logger.info('Authorization request sent');
+  },
+
+  handleAuthorize(auth) {
+    State.authorized = true;
+    State.balance = parseFloat(auth.balance);
+    State.currency = auth.currency;
+    UI.updateBalance();
+    Toast.show(`Authorized: ${auth.loginid} | ${auth.currency} ${auth.balance}`, 'success');
+    Logger.info(`Authorized: ${auth.loginid}, Balance: ${auth.balance} ${auth.currency}`);
+    this.send({ balance: 1, subscribe: 1 });
+  },
+
+  startPing() {
+    this.pingTimer = setInterval(() => {
+      this.send({ ping: 1 });
+    }, Config.PING_INTERVAL);
+  },
+
+  stopPing() {
+    clearInterval(this.pingTimer);
+  },
+
+  scheduleReconnect() {
+    if (this.reconnectCount >= Config.MAX_RECONNECT) {
+      Logger.error('Max reconnect attempts reached. Manual reconnect required.');
+      Toast.show('Reconnect failed. Tap Reconnect.', 'error');
+      return;
+    }
+    this.reconnectCount++;
+    const delay = Math.min(Config.RECONNECT_DELAY * this.reconnectCount, 30000);
+    Logger.info(`Reconnecting in ${delay / 1000}s (attempt ${this.reconnectCount})`);
+    this.reconnectTimer = setTimeout(() => this.connect(), delay);
+  },
+
+  reconnect() {
+    this.reconnectCount = 0;
+    if (this.ws) { this.ws.close(); }
+    clearTimeout(this.reconnectTimer);
+    this.connect();
+  },
+
+  buyContract(params) {
+    this.send({
+      buy: 1,
+      subscribe: 1,
+      price: params.stake,
+      parameters: {
+        amount: params.stake,
+        basis: 'stake',
+        contract_type: params.direction,
+        currency: State.currency || 'USD',
+        duration: params.ticks,
+        duration_unit: 't',
+        symbol: State.currentMarket,
+      },
+    });
+  },
+};
+
+/* =============================================
+   TICK ENGINE
+   ============================================= */
+const TickEngine = {
+  chartPrices: [],
+  chartCtx: null,
+  chartAnimFrame: null,
+
+  loadHistory(history) {
+    if (!history || !history.prices) return;
+    const prices = history.prices;
+    const times  = history.times;
+
+    State.ticks = [];
+    State.prices = [];
+    State.lastDigits = [];
+
+    for (let i = 0; i < prices.length; i++) {
+      const p = parseFloat(prices[i]);
+      State.prices.push(p);
+      State.lastDigits.push(this.getLastDigit(p));
+      State.ticks.push({ price: p, time: times[i] });
+    }
+
+    // Compute initial tick directions
+    State.tickDirections = [];
+    for (let i = 1; i < State.ticks.length; i++) {
+      State.tickDirections.push(State.ticks[i].price >= State.ticks[i - 1].price ? 'up' : 'down');
+    }
+
+    if (State.prices.length > 0) {
+      State.currentPrice = State.prices[State.prices.length - 1];
+    }
+
+    Logger.info(`Loaded ${prices.length} ticks history`);
+    DigitAnalyzer.compute();
+    this.updateTickStream();
+    this.drawChart();
+    AIEngine.evaluate();
+  },
+
+  processTick(tick) {
+    if (!tick) return;
+    const price = parseFloat(tick.quote);
+    const prevPrice = State.currentPrice;
+
+    State.prevPrice = prevPrice;
+    State.currentPrice = price;
+    State.prices.push(price);
+    if (State.prices.length > 3000) State.prices.shift();
+
+    const digit = this.getLastDigit(price);
+    State.lastDigits.push(digit);
+    if (State.lastDigits.length > 3000) State.lastDigits.shift();
+
+    const dir = price >= prevPrice ? 'up' : 'down';
+    State.tickDirections.push(dir);
+    if (State.tickDirections.length > 3000) State.tickDirections.shift();
+
+    // Update streak
+    if (dir === State.currentStreakDir) {
+      State.currentStreakCount++;
+    } else {
+      State.currentStreakDir = dir;
+      State.currentStreakCount = 1;
+    }
+
+    // Handle pending virtual trade
+    if (State.pendingTrade) {
+      State.pendingTicksLeft--;
+      if (State.pendingTicksLeft <= 0) {
+        this.resolveTrade(price);
+      }
+    }
+
+    UI.updatePrice(price, prevPrice);
+    this.updateTickStream(dir);
+    DigitAnalyzer.compute();
+    AIEngine.evaluate();
+    StrategyEngine.check();
+  },
+
+  resolveTrade(exitPrice) {
+    const { pendingDirection, pendingStartPrice, pendingStake, pendingMode } = State;
+    let won = false;
+
+    if (pendingDirection === 'CALL') won = exitPrice > pendingStartPrice;
+    else won = exitPrice < pendingStartPrice;
+
+    const payout = won ? pendingStake * Config.PAYOUT_RATIO : -pendingStake;
+    TradeEngine.recordResult(won, payout, pendingMode);
+
+    State.pendingTrade = null;
+    State.pendingTicksLeft = 0;
+    State.isTrading = false;
+  },
+
+  getLastDigit(price) {
+    const str = price.toString();
+    return parseInt(str[str.length - 1]) || 0;
+  },
+
+  updateTickStream(newDir) {
+    const container = document.getElementById('tick-stream');
+    const dirs = State.tickDirections.slice(-20);
+    const html = dirs.map((d, i) =>
+      `<div class="tick-dot ${d} ${i === dirs.length - 1 ? 'new' : ''}">${d === 'up' ? '▲' : '▼'}</div>`
+    ).join('');
+    container.innerHTML = html;
+
+    // Update sequence
+    const seqEl = document.getElementById('seq-display');
+    const recent = State.tickDirections.slice(-8);
+    seqEl.innerHTML = recent.map((d, i) =>
+      `<div class="seq-arrow ${d} ${i === recent.length - 1 ? 'new' : ''}">${d === 'up' ? '↑' : '↓'}</div>`
+    ).join('');
+
+    document.getElementById('streak-count').textContent = State.currentStreakCount;
+  },
+
+  drawChart() {
+    const canvas = document.getElementById('price-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const prices = State.prices.slice(-100);
+    if (prices.length < 2) return;
+
+    canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+    canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+    const W = canvas.offsetWidth;
+    const H = canvas.offsetHeight;
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min || 1;
+
+    ctx.clearRect(0, 0, W, H);
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, 'rgba(0,212,255,0.25)');
+    grad.addColorStop(1, 'rgba(0,212,255,0)');
+
+    ctx.beginPath();
+    prices.forEach((p, i) => {
+      const x = (i / (prices.length - 1)) * W;
+      const y = H - ((p - min) / range) * (H - 8) - 4;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.strokeStyle = '#00d4ff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.lineTo(W, H); ctx.lineTo(0, H);
+    ctx.fillStyle = grad;
+    ctx.fill();
+  },
+};
+
+/* =============================================
+   DIGIT ANALYZER
+   ============================================= */
+const DigitAnalyzer = {
+  stats: {},
+
+  compute() {
+    const window = State.digitWindow;
+    const digits = State.lastDigits.slice(-window);
+    const total = digits.length;
+    if (total === 0) return;
+
+    const counts = Array(10).fill(0);
+    digits.forEach(d => counts[d]++);
+
+    const freq = counts.map((c, d) => ({ digit: d, count: c, pct: (c / total * 100).toFixed(1) }));
+    const sorted = [...freq].sort((a, b) => b.count - a.count);
+
+    const odd = digits.filter(d => d % 2 !== 0).length;
+    const even = total - odd;
+    const high = digits.filter(d => d >= 5).length;
+    const low = total - high;
+
+    // Max consecutive repeat
+    let maxRepeat = 1, cur = 1;
+    for (let i = 1; i < digits.length; i++) {
+      if (digits[i] === digits[i - 1]) { cur++; maxRepeat = Math.max(maxRepeat, cur); }
+      else cur = 1;
+    }
+
+    // Anomaly score (how far from uniform 10%)
+    const expected = total / 10;
+    const anomaly = counts.reduce((s, c) => s + Math.abs(c - expected), 0) / total;
+
+    this.stats = { freq, sorted, odd, even, high, low, total, maxRepeat, anomaly };
+    DigitUI.render();
+  },
+
+  getHotDigits(n = 3) {
+    if (!this.stats.sorted) return [];
+    return this.stats.sorted.slice(0, n).map(x => x.digit);
+  },
+
+  getColdDigits(n = 3) {
+    if (!this.stats.sorted) return [];
+    return this.stats.sorted.slice(-n).map(x => x.digit);
+  },
+};
+
+/* =============================================
+   AI ENGINE
+   ============================================= */
+const AIEngine = {
+  factors: {
+    reversalSignal:    { weight: 35, score: 0, label: 'Reversal Signal' },
+    streakStrength:    { weight: 20, score: 0, label: 'Streak Strength' },
+    digitImbalance:    { weight: 15, score: 0, label: 'Digit Imbalance' },
+    riskFilter:        { weight: 20, score: 0, label: 'Risk Filter' },
+    volatilityContext: { weight: 10, score: 0, label: 'Volatility' },
+  },
+
+  modeThresholds: {
+    conservative: 80,
+    balanced:     65,
+    aggressive:   50,
+    hyper:        35,
+  },
+
+  evaluate() {
+    const streak = State.currentStreakCount;
+    const streakDir = State.currentStreakDir;
+    const required = parseInt(document.getElementById('strategy-ticks')?.value || 5);
+
+    // 1. Reversal signal score
+    if (streak >= required) {
+      this.factors.reversalSignal.score = Math.min(100, 60 + (streak - required) * 15);
+    } else {
+      this.factors.reversalSignal.score = Math.max(0, (streak / required) * 40);
+    }
+
+    // 2. Streak strength
+    this.factors.streakStrength.score = Math.min(100, (streak / 8) * 100);
+
+    // 3. Digit imbalance
+    const stats = DigitAnalyzer.stats;
+    if (stats.total > 20) {
+      const anomaly = stats.anomaly || 0;
+      this.factors.digitImbalance.score = Math.min(100, anomaly * 300);
+    }
+
+    // 4. Risk filter — penalize if in drawdown
+    const riskOk = !State.emergencyStop &&
+                   State.consecutiveLosses < State.maxConsecLosses &&
+                   Math.abs(State.dailyLoss) < State.maxDailyLoss;
+    this.factors.riskFilter.score = riskOk ? 85 : 0;
+
+    // 5. Volatility context — based on recent price range
+    const recent = State.prices.slice(-20);
+    if (recent.length > 1) {
+      const range = Math.max(...recent) - Math.min(...recent);
+      const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+      const volatilityPct = (range / avg) * 100;
+      this.factors.volatilityContext.score = Math.min(100, volatilityPct * 200);
+    }
+
+    // Compute weighted confidence
+    const totalWeight = Object.values(this.factors).reduce((s, f) => s + f.weight, 0);
+    const weightedSum  = Object.values(this.factors).reduce((s, f) => s + f.score * f.weight, 0);
+    State.aiConfidence = Math.round(weightedSum / totalWeight);
+
+    // Determine signal
+    const threshold = State.aiThreshold;
+    if (State.aiConfidence >= threshold && streak >= required && !State.emergencyStop) {
+      State.aiSignal = streakDir === 'down' ? 'CALL' : 'PUT';
+      State.aiReason = `${streak} consecutive ${streakDir === 'down' ? 'FALL' : 'RISE'} ticks → ${State.aiSignal} reversal (${State.aiConfidence}% confidence)`;
+    } else {
+      State.aiSignal = null;
+      State.aiReason = State.aiConfidence < threshold
+        ? `Confidence ${State.aiConfidence}% below threshold ${threshold}%`
+        : streak < required
+        ? `Streak ${streak}/${required} ticks (need ${required} consecutive)`
+        : 'Risk filter active — trading paused';
+    }
+
+    Logger.ai(`Confidence: ${State.aiConfidence}% | Signal: ${State.aiSignal || 'NONE'} | ${State.aiReason}`);
+    UI.updateAI();
+  },
+
+  setMode(mode, btn) {
+    State.aiMode = mode;
+    State.aiThreshold = this.modeThresholds[mode] || 65;
+    document.getElementById('conf-thresh-range').value = State.aiThreshold;
+    document.getElementById('conf-thresh-val').textContent = State.aiThreshold + '%';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    Toast.show(`AI Mode: ${mode.toUpperCase()}`, 'info');
+    Logger.info(`AI mode set to ${mode}, threshold ${State.aiThreshold}%`);
+    DB.saveSetting('aiMode', mode);
+  },
+
+  setThreshold(val) {
+    State.aiThreshold = parseInt(val);
+    document.getElementById('conf-thresh-val').textContent = val + '%';
+  },
+
+  toggle(enabled) {
+    State.aiEnabled = enabled;
+    Toast.show(`AI Auto-Trade: ${enabled ? 'ON' : 'OFF'}`, enabled ? 'success' : 'warn');
+    Logger.info(`AI enabled: ${enabled}`);
+  },
+};
+
+/* =============================================
+   STRATEGY ENGINE
+   ============================================= */
+const StrategyEngine = {
+  lastSignalTime: 0,
+  SIGNAL_COOLDOWN: 3000,
+
+  setReversalTicks(n) {
+    Logger.info(`Reversal trigger set to ${n} ticks`);
+  },
+
+  check() {
+    if (!State.aiEnabled || !State.autoTrading || State.isTrading || State.emergencyStop) return;
+
+    const now = Date.now();
+    if (now - this.lastSignalTime < this.SIGNAL_COOLDOWN) return;
+
+    if (State.aiSignal) {
+      this.lastSignalTime = now;
+      Logger.info(`Strategy signal: ${State.aiSignal} | Confidence: ${State.aiConfidence}%`);
+      TradeEngine.executeAI(State.aiSignal);
+    }
+  },
+};
+
+/* =============================================
+   MARTINGALE ENGINE
+   ============================================= */
+const MartingaleEngine = {
+  setMultiplier(val) {
+    State.martMultiplier = parseFloat(val);
+    document.getElementById('mart-mult-val').textContent = parseFloat(val).toFixed(2) + 'x';
+  },
+
+  setMaxDepth(val) {
+    State.martMaxDepth = parseInt(val);
+  },
+
+  toggle(enabled) {
+    State.martEnabled = enabled;
+    Toast.show(`Martingale: ${enabled ? 'ON' : 'OFF'}`, 'info');
+  },
+
+  onWin() {
+    State.martDepth = 0;
+    State.martCurrentStake = State.martBaseStake;
+    this.updateDisplay();
+  },
+
+  onLoss() {
+    if (!State.martEnabled) return;
+    if (State.martDepth < State.martMaxDepth) {
+      State.martDepth++;
+      State.martCurrentStake = parseFloat(
+        (State.martBaseStake * Math.pow(State.martMultiplier, State.martDepth)).toFixed(2)
+      );
+    } else {
+      Logger.warn(`Martingale max depth ${State.martMaxDepth} reached. Resetting.`);
+      Toast.show('Martingale limit reached. Resetting.', 'warn');
+      State.martDepth = 0;
+      State.martCurrentStake = State.martBaseStake;
+    }
+    this.updateDisplay();
+  },
+
+  updateDisplay() {
+    document.getElementById('mart-stake').textContent = `$${State.martCurrentStake.toFixed(2)}`;
+    const steps = document.querySelectorAll('.mart-step');
+    steps.forEach((el, i) => {
+      el.classList.remove('active', 'loss');
+      if (i < State.martDepth) el.classList.add('loss');
+      else if (i === State.martDepth && State.martDepth > 0) el.classList.add('active');
+    });
+    const maxD = parseInt(document.getElementById('mart-max-depth')?.value || 5);
+    document.getElementById('mart-progress').style.width = `${(State.martDepth / maxD) * 100}%`;
+  },
+};
+
+/* =============================================
+   RISK MANAGER
+   ============================================= */
+const RiskManager = {
+  check() {
+    if (State.emergencyStop) return false;
+    if (Math.abs(State.dailyLoss) >= State.maxDailyLoss) {
+      Logger.warn('Daily loss limit reached. Trading paused.');
+      Toast.show('Daily loss limit reached!', 'error');
+      State.autoTrading = false;
+      return false;
+    }
+    if (State.consecutiveLosses >= State.maxConsecLosses) {
+      Logger.warn('Max consecutive losses reached. Cooling down.');
+      Toast.show(`${State.consecutiveLosses} consecutive losses. Pausing.`, 'warn');
+      State.autoTrading = false;
+      return false;
+    }
+    if (State.totalTrades >= State.maxTrades) {
+      Logger.warn('Max trades per session reached.');
+      State.autoTrading = false;
+      return false;
+    }
+    const pnl = State.tradeMode === 'virtual' ? State.virtualProfit : State.realProfit;
+    if (pnl >= State.takeProfit) {
+      Logger.info(`Take profit reached: $${pnl.toFixed(2)}`);
+      Toast.show(`Take Profit hit! $${pnl.toFixed(2)}`, 'success');
+      State.autoTrading = false;
+      return false;
+    }
+    return true;
+  },
+
+  toggleEmergency(val) {
+    State.emergencyStop = val;
+    if (val) {
+      State.autoTrading = false;
+      State.isTrading = false;
+      Toast.show('EMERGENCY STOP ACTIVATED', 'error');
+      Logger.error('Emergency stop activated by user');
+    } else {
+      Toast.show('Emergency stop deactivated', 'info');
+    }
+  },
+};
+
+/* =============================================
+   TRADE ENGINE
+   ============================================= */
+const TradeEngine = {
+  manualTrade(direction, mode) {
+    if (State.isTrading) { Toast.show('Trade already active', 'warn'); return; }
+    if (!State.connected) { Toast.show('Not connected', 'error'); return; }
+    if (State.emergencyStop) { Toast.show('Emergency stop active', 'error'); return; }
+
+    const stakeEl = mode === 'virtual' ? 'virt-stake' : 'real-stake';
+    const ticksEl = mode === 'virtual' ? 'virt-ticks' : 'real-ticks';
+    const stake = parseFloat(document.getElementById(stakeEl)?.value || 0.35);
+    const ticks = parseInt(document.getElementById(ticksEl)?.value || 5);
+
+    if (mode === 'real' && !State.authorized) {
+      Toast.show('Authorize first!', 'error'); return;
+    }
+
+    this.executeTrade({ direction, stake, ticks, mode, isAuto: false });
+  },
+
+  executeAI(direction) {
+    if (State.isTrading) return;
+    if (!RiskManager.check()) return;
+
+    const stake = State.martCurrentStake;
+    const ticks = parseInt(document.getElementById(State.tradeMode === 'virtual' ? 'virt-ticks' : 'real-ticks')?.value || 5);
+
+    this.executeTrade({ direction, stake, ticks, mode: State.tradeMode, isAuto: true });
+  },
+
+  executeTrade({ direction, stake, ticks, mode, isAuto }) {
+    State.isTrading = true;
+    State.pendingTrade = true;
+    State.pendingTicksLeft = ticks;
+    State.pendingDirection = direction;
+    State.pendingStartPrice = State.currentPrice;
+    State.pendingStake = stake;
+    State.pendingMode = mode;
+
+    const label = direction === 'CALL' ? '▲ RISE' : '▼ FALL';
+    Logger.trade(`${isAuto ? '[AUTO]' : '[MANUAL]'} ${label} | Stake: $${stake} | Ticks: ${ticks} | AI: ${State.aiConfidence}% | ${mode.toUpperCase()}`);
+    Toast.show(`${label} $${stake} — ${ticks} ticks`, direction === 'CALL' ? 'success' : 'error');
+
+    if (mode === 'real' && State.authorized) {
+      WSManager.buyContract({ direction, stake, ticks });
+    }
+
+    UI.setTradingState(true, direction);
+  },
+
+  handleBuyResponse(msg) {
+    if (msg.error) {
+      Logger.error(`Buy failed: ${msg.error.message}`);
+      Toast.show(`Trade failed: ${msg.error.message}`, 'error');
+      State.isTrading = false;
+      State.pendingTrade = null;
+      UI.setTradingState(false, null);
+      return;
+    }
+    Logger.trade(`Real trade placed: Contract #${msg.buy.contract_id}`);
+  },
+
+  handleContractUpdate(contract) {
+    if (!contract || contract.is_sold !== 1) return;
+    const profit = parseFloat(contract.profit);
+    const won = profit > 0;
+    this.recordResult(won, profit, 'real');
+    State.isTrading = false;
+    State.pendingTrade = null;
+  },
+
+  recordResult(won, payout, mode) {
+    State.totalTrades++;
+    const roundedPayout = parseFloat(payout.toFixed(2));
+
+    if (won) {
+      State.wins++;
+      State.consecutiveLosses = 0;
+      State.streak = State.streakDir === 'W' ? State.streak + 1 : 1;
+      State.streakDir = 'W';
+      MartingaleEngine.onWin();
+    } else {
+      State.losses++;
+      State.consecutiveLosses++;
+      State.streak = State.streakDir === 'L' ? State.streak + 1 : 1;
+      State.streakDir = 'L';
+      State.dailyLoss += Math.abs(payout);
+      MartingaleEngine.onLoss();
+    }
+
+    if (mode === 'virtual') {
+      State.virtualBalance += roundedPayout;
+      State.virtualProfit += roundedPayout;
+    } else {
+      State.realProfit += roundedPayout;
+    }
+
+    const result = won ? 'WIN' : 'LOSS';
+    Logger.trade(`${result} | P&L: ${roundedPayout >= 0 ? '+' : ''}$${roundedPayout.toFixed(2)} | Total: ${State.totalTrades} | W:${State.wins} L:${State.losses}`);
+    Toast.show(`${won ? '✅ WIN' : '❌ LOSS'} ${roundedPayout >= 0 ? '+' : ''}$${Math.abs(roundedPayout).toFixed(2)}`, won ? 'success' : 'error');
+
+    UI.updateStats();
+    UI.setTradingState(false, null);
+    TradeUI.addTradeRow({
+      time: new Date().toLocaleTimeString(),
+      type: won ? 'WIN' : 'LOSS',
+      direction: State.pendingDirection || '—',
+      stake: State.pendingStake || 0,
+      pnl: roundedPayout,
+      aiConfidence: State.aiConfidence,
+      mode,
+    });
+    DB.put('trades', {
+      time: Date.now(), won, payout: roundedPayout, mode,
+      direction: State.pendingDirection, stake: State.pendingStake,
+      aiConfidence: State.aiConfidence, market: State.currentMarket,
+    });
+  },
+
+  startAuto(mode) {
+    State.tradeMode = mode;
+    State.autoTrading = true;
+    Toast.show(`Auto trading ${mode.toUpperCase()} started`, 'success');
+    Logger.info(`Auto trading started — mode: ${mode}`);
+  },
+
+  stop(mode) {
+    State.autoTrading = false;
+    State.isTrading = false;
+    State.pendingTrade = null;
+    UI.setTradingState(false, null);
+    Toast.show('Trading stopped', 'warn');
+    Logger.info('Auto trading stopped');
+  },
+};
+
+/* =============================================
+   UI CONTROLLER
+   ============================================= */
+const UI = {
+  setConnStatus(status) {
+    State.connected = status === 'connected';
+    const dot = document.getElementById('conn-dot');
+    dot.className = 'conn-dot ' + (status === 'connected' ? 'connected' : status === 'connecting' ? 'connecting' : '');
+  },
+
+  updatePrice(price, prevPrice) {
+    const change = prevPrice > 0 ? ((price - prevPrice) / prevPrice * 100) : 0;
+    const digit = TickEngine.getLastDigit(price);
+
+    document.getElementById('dash-price').textContent = price.toFixed(5);
+    document.getElementById('dash-last-digit').textContent = `Last: ${digit}`;
+
+    const changeEl = document.getElementById('dash-change');
+    changeEl.textContent = `${change >= 0 ? '+' : ''}${change.toFixed(4)}%`;
+    changeEl.className = `price-change ${change >= 0 ? 'up' : 'down'}`;
+
+    TickEngine.drawChart();
+  },
+
+  updateBalance() {
+    document.getElementById('balance-display').textContent =
+      `${State.balance.toFixed(2)} ${State.currency}`;
+    document.getElementById('real-balance').textContent =
+      `$${State.balance.toFixed(2)}`;
+  },
+
+  updateAI() {
+    const conf = State.aiConfidence;
+    const signal = State.aiSignal;
+
+    // Update gauge
+    const dashOffset = 157 - (conf / 100) * 157;
+    const arcColor = conf >= 80 ? 'var(--green)' : conf >= 60 ? 'var(--cyan)' : conf >= 40 ? 'var(--orange)' : 'var(--red)';
+
+    ['gauge-arc', 'ai-gauge-arc2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.setAttribute('stroke-dashoffset', dashOffset); el.style.stroke = arcColor; }
+    });
+
+    ['gauge-num', 'ai-gauge-num2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.textContent = conf; el.setAttribute('fill', arcColor); }
+    });
+
+    // Signal badge
+    const signalClass = signal === 'CALL' ? 'rise' : signal === 'PUT' ? 'fall' : 'none';
+    const signalText = signal === 'CALL' ? '▲ RISE SIGNAL' : signal === 'PUT' ? '▼ FALL SIGNAL' : '⊘ NO SIGNAL';
+
+    ['ai-signal-badge', 'ai-signal2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.className = `ai-signal ${signalClass}`; el.textContent = signalText; }
+    });
+
+    const reasonEl = document.getElementById('ai-reason');
+    if (reasonEl) reasonEl.textContent = State.aiReason;
+
+    this.updateAIFactors();
+    this.updateStrategySignals();
+  },
+
+  updateAIFactors() {
+    const container = document.getElementById('ai-factors');
+    if (!container) return;
+    container.innerHTML = Object.entries(AIEngine.factors).map(([key, f]) => `
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:0.65rem;color:var(--text-secondary)">${f.label}</span>
+          <span style="font-size:0.65rem;color:var(--cyan);font-weight:600">${Math.round(f.score)}% <span style="color:var(--text-muted)">× ${f.weight}w</span></span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:${f.score}%;background:${f.score >= 70 ? 'var(--green)' : f.score >= 40 ? 'var(--cyan)' : 'var(--red)'}"></div>
+        </div>
+      </div>
+    `).join('');
+  },
+
+  updateStrategySignals() {
+    const container = document.getElementById('strategy-signals');
+    if (!container) return;
+    const streak = State.currentStreakCount;
+    const dir = State.currentStreakDir;
+    const required = parseInt(document.getElementById('strategy-ticks')?.value || 5);
+    const signals = [
+      { label: `Consecutive ${dir === 'down' ? 'FALL' : 'RISE'} streak`, value: `${streak}/${required}`, color: streak >= required ? 'var(--green)' : 'var(--orange)' },
+      { label: 'Martingale depth', value: `${State.martDepth}/${State.martMaxDepth}`, color: State.martDepth === 0 ? 'var(--cyan)' : 'var(--orange)' },
+      { label: 'AI confidence', value: `${State.aiConfidence}%`, color: State.aiConfidence >= State.aiThreshold ? 'var(--green)' : 'var(--red)' },
+      { label: 'Risk status', value: State.emergencyStop ? 'STOPPED' : State.consecutiveLosses >= 3 ? 'CAUTION' : 'OK', color: State.emergencyStop ? 'var(--red)' : State.consecutiveLosses >= 3 ? 'var(--orange)' : 'var(--green)' },
+    ];
+    container.innerHTML = signals.map(s => `
+      <div style="display:flex;justify-content:space-between;padding:6px 8px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm)">
+        <span style="font-size:0.65rem;color:var(--text-secondary)">${s.label}</span>
+        <span style="font-size:0.65rem;font-weight:600;color:${s.color}">${s.value}</span>
+      </div>
+    `).join('');
+  },
+
+  updateStats() {
+    const winRate = State.totalTrades > 0 ? Math.round((State.wins / State.totalTrades) * 100) : 0;
+    const pnl = State.tradeMode === 'virtual' ? State.virtualProfit : State.realProfit;
+
+    document.getElementById('stat-pnl').textContent = `$${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}`;
+    document.getElementById('stat-pnl').className = `stat-value ${pnl >= 0 ? 'pos' : 'neg'}`;
+    document.getElementById('stat-winrate').textContent = `${winRate}%`;
+    document.getElementById('stat-trades').textContent = State.totalTrades;
+    document.getElementById('stat-streak').textContent = State.streak > 0 ? `${State.streakDir}×${State.streak}` : '—';
+    document.getElementById('stat-streak').className = `stat-value ${State.streakDir === 'W' ? 'pos' : 'neg'}`;
+
+    // Virtual
+    document.getElementById('virt-balance').textContent = `$${State.virtualBalance.toFixed(2)}`;
+    document.getElementById('virt-profit').textContent = `${State.virtualProfit >= 0 ? '+' : ''}$${State.virtualProfit.toFixed(2)}`;
+    document.getElementById('virt-profit').className = `stat-value ${State.virtualProfit >= 0 ? 'pos' : 'neg'}`;
+    document.getElementById('virt-trades').textContent = State.totalTrades;
+    document.getElementById('virt-winrate').textContent = `${winRate}%`;
+
+    // Real
+    document.getElementById('real-pnl').textContent = `${State.realProfit >= 0 ? '+' : ''}$${State.realProfit.toFixed(2)}`;
+    document.getElementById('real-pnl').className = `stat-value ${State.realProfit >= 0 ? 'pos' : 'neg'}`;
+    document.getElementById('real-trades').textContent = State.totalTrades;
+    document.getElementById('real-winrate').textContent = `${winRate}%`;
+
+    MartingaleEngine.updateDisplay();
+  },
+
+  setTradingState(active, direction) {
+    // Visually highlight trade direction
+    // Can extend with animations
+  },
+};
+
+/* =============================================
+   DIGIT UI
+   ============================================= */
+const DigitUI = {
+  currentWindow: 100,
+
+  setWindow(w, btn) {
+    this.currentWindow = w;
+    State.digitWindow = w;
+    document.querySelectorAll('#sec-digits .tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    DigitAnalyzer.compute();
+  },
+
+  render() {
+    const stats = DigitAnalyzer.stats;
+    if (!stats.freq) return;
+
+    const max = Math.max(...stats.freq.map(x => x.count));
+    const min = Math.min(...stats.freq.map(x => x.count));
+    const range = max - min || 1;
+
+    const grid = document.getElementById('digit-grid');
+    if (!grid) return;
+    grid.innerHTML = stats.freq.map(({ digit, count, pct }) => {
+      const ratio = (count - min) / range;
+      const heatLevel = Math.round(ratio * 7);
+      return `
+        <div class="digit-cell heat-${heatLevel}">
+          <div class="digit-num">${digit}</div>
+          <div class="digit-pct">${pct}%</div>
+          <div class="digit-count">${count}</div>
+        </div>
+      `;
+    }).join('');
+
+    const hot = DigitAnalyzer.getHotDigits(3).join(', ');
+    const cold = DigitAnalyzer.getColdDigits(3).join(', ');
+    const odd = stats.total > 0 ? Math.round(stats.odd / stats.total * 100) : 50;
+    const even = 100 - odd;
+    const high = stats.total > 0 ? Math.round(stats.high / stats.total * 100) : 50;
+    const low = 100 - high;
+
+    document.getElementById('hot-digits').textContent = hot || '—';
+    document.getElementById('cold-digits').textContent = cold || '—';
+    document.getElementById('odd-ratio').textContent  = `${odd}%`;
+    document.getElementById('even-ratio').textContent = `${even}%`;
+    document.getElementById('high-ratio').textContent = `${high}%`;
+    document.getElementById('low-ratio').textContent  = `${low}%`;
+    document.getElementById('max-repeat').textContent = stats.maxRepeat || '—';
+
+    const anomaly = stats.anomaly;
+    const anomalyEl = document.getElementById('anomaly-score');
+    anomalyEl.textContent = anomaly ? (anomaly * 100).toFixed(1) + '%' : '—';
+    anomalyEl.className = `stat-value ${anomaly > 0.03 ? 'pos' : 'neg'}`;
+
+    // Probability matrix
+    const matrix = document.getElementById('prob-matrix');
+    if (matrix) {
+      matrix.innerHTML = stats.freq.map(({ digit, pct }) => `
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px;text-align:center">
+          <div style="font-family:var(--font-display);font-size:0.9rem;color:var(--text-primary)">${digit}</div>
+          <div style="font-size:0.65rem;color:var(--cyan);margin-top:2px">${pct}%</div>
+          <div class="progress-bar" style="margin-top:4px">
+            <div class="progress-fill" style="width:${Math.min(parseFloat(pct) * 10, 100)}%;background:${parseFloat(pct) > 12 ? 'var(--green)' : parseFloat(pct) < 8 ? 'var(--red)' : 'var(--cyan)'}"></div>
+          </div>
+        </div>
+      `).join('');
+    }
+  },
+};
+
+/* =============================================
+   TRADE UI
+   ============================================= */
+const TradeUI = {
+  setMode(mode, btn) {
+    State.tradeMode = mode;
+    document.getElementById('virtual-panel').style.display = mode === 'virtual' ? 'block' : 'none';
+    document.getElementById('real-panel').style.display   = mode === 'real'    ? 'block' : 'none';
+    document.querySelectorAll('#sec-trade > .tab-row .tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    if (mode === 'real') {
+      Toast.show('⚠️ Real trading — use with caution!', 'warn');
+    }
+  },
+
+  addTradeRow({ time, type, direction, stake, pnl, aiConfidence, mode }) {
+    const tbody = document.getElementById('trade-log-body');
+    if (!tbody) return;
+
+    const dir = direction === 'CALL' ? '<span class="badge badge-rise">RISE</span>' : direction === 'PUT' ? '<span class="badge badge-fall">FALL</span>' : '—';
+    const outcome = type === 'WIN' ? '<span class="badge badge-win">WIN</span>' : '<span class="badge badge-loss">LOSS</span>';
+    const modeEl = mode === 'virtual' ? '<span class="badge badge-virt">VIRT</span>' : '<span class="badge badge-real">REAL</span>';
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${time}</td>
+      <td>${dir}</td>
+      <td>${outcome}</td>
+      <td>$${parseFloat(stake).toFixed(2)}</td>
+      <td style="color:${pnl >= 0 ? 'var(--green)' : 'var(--red)'}">${pnl >= 0 ? '+' : ''}$${Math.abs(pnl).toFixed(2)}</td>
+      <td>${aiConfidence}%</td>
+      <td>${modeEl}</td>
+    `;
+    tbody.insertBefore(tr, tbody.firstChild);
+
+    // Keep max 200 rows
+    while (tbody.children.length > 200) tbody.removeChild(tbody.lastChild);
+  },
+};
+
+/* =============================================
+   LOG UI
+   ============================================= */
+const LogUI = {
+  activeTab: 'system',
+
+  showTab(tab, btn) {
+    this.activeTab = tab;
+    ['system', 'trades', 'ai'].forEach(t => {
+      document.getElementById(`log-${t}`).style.display = t === tab ? 'block' : 'none';
+    });
+    document.querySelectorAll('#sec-logs .tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+  },
+
+  appendEntry(entry) {
+    const { time, type, msg, category } = entry;
+    const timeStr = new Date(time).toLocaleTimeString();
+
+    if (category === 'trade') {
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.innerHTML = `<span class="log-time">${timeStr}</span><span class="log-type trade">TRADE</span><span class="log-msg">${msg}</span>`;
+      const cont = document.getElementById('system-log-entries');
+      if (cont) { cont.insertBefore(div, cont.firstChild); }
+    } else if (category === 'ai') {
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.innerHTML = `<span class="log-time">${timeStr}</span><span class="log-type ai">AI</span><span class="log-msg">${msg}</span>`;
+      const aiCont = document.getElementById('ai-log-entries');
+      if (aiCont) { aiCont.insertBefore(div, aiCont.firstChild); while (aiCont.children.length > 200) aiCont.removeChild(aiCont.lastChild); }
+    } else {
+      const div = document.createElement('div');
+      div.className = 'log-entry';
+      div.innerHTML = `<span class="log-time">${timeStr}</span><span class="log-type ${type}">${type.toUpperCase()}</span><span class="log-msg">${msg}</span>`;
+      const sysCont = document.getElementById('system-log-entries');
+      if (sysCont) { sysCont.insertBefore(div, sysCont.firstChild); while (sysCont.children.length > 300) sysCont.removeChild(sysCont.lastChild); }
+    }
+  },
+};
+
+/* =============================================
+   TOAST
+   ============================================= */
+const Toast = {
+  show(msg, type = 'info') {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const icons = { success: '✅', error: '❌', warn: '⚠️', info: 'ℹ️' };
+    toast.innerHTML = `${icons[type] || ''} ${msg}`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 3200);
+  },
+};
+
+/* =============================================
+   APP CONTROLLER
+   ============================================= */
+const App = {
+  async init() {
+    Logger.info(`DerivAI Terminal v${Config.VERSION} starting...`);
+
+    await DB.init();
+    await DB.loadSettings();
+
+    this.loadFromStorage();
+
+    // Initialize default state
+    State.martBaseStake = parseFloat(document.getElementById('virt-stake')?.value || 0.35);
+    State.martCurrentStake = State.martBaseStake;
+    State.maxDailyLoss = parseFloat(document.getElementById('max-daily-loss')?.value || 10);
+    State.maxConsecLosses = parseInt(document.getElementById('max-consec-losses')?.value || 6);
+    State.takeProfit = parseFloat(document.getElementById('take-profit')?.value || 5);
+    State.maxTrades = parseInt(document.getElementById('max-trades')?.value || 100);
+
+    document.getElementById('dash-market-name').textContent =
+      document.getElementById('market-select').options[document.getElementById('market-select').selectedIndex].text;
+
+    DigitUI.render();
+    MartingaleEngine.updateDisplay();
+
+    // Register service worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    }
+
+    WSManager.connect();
+    Logger.info('App initialized. Connecting...');
+
+    // Keep chart responsive
+    window.addEventListener('resize', () => TickEngine.drawChart());
+  },
+
+  navigate(page, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+    const section = document.getElementById(`sec-${page}`);
+    if (section) section.classList.add('active');
+    if (btn) btn.classList.add('active');
+  },
+
+  switchMarket(symbol) {
+    State.currentMarket = symbol;
+    State.ticks = [];
+    State.prices = [];
+    State.lastDigits = [];
+    State.tickDirections = [];
+    State.currentStreakCount = 0;
+
+    const name = document.getElementById('market-select').options[document.getElementById('market-select').selectedIndex].text;
+    document.getElementById('dash-market-name').textContent = name;
+
+    if (WSManager.ws && WSManager.ws.readyState === WebSocket.OPEN) {
+      WSManager.subscribeMarket(symbol);
+      WSManager.getHistory(symbol);
+    }
+
+    Toast.show(`Switched to ${name}`, 'info');
+    Logger.info(`Market switched to ${symbol}`);
+  },
+
+  softReset() {
+    State.totalTrades = 0;
+    State.wins = 0;
+    State.losses = 0;
+    State.streak = 0;
+    State.streakDir = null;
+    State.consecutiveLosses = 0;
+    State.dailyLoss = 0;
+    State.virtualProfit = 0;
+    State.realProfit = 0;
+    State.autoTrading = false;
+    State.isTrading = false;
+    State.pendingTrade = null;
+    MartingaleEngine.onWin(); // reset martingale
+    UI.updateStats();
+    Toast.show('Soft reset complete', 'info');
+    Logger.info('Soft reset performed');
+  },
+
+  hardReset() {
+    this.softReset();
+    State.virtualBalance = 1000;
+    State.ticks = [];
+    State.prices = [];
+    State.lastDigits = [];
+    State.tickDirections = [];
+    State.currentStreakCount = 0;
+    DB.clear('trades');
+    DB.clear('logs');
+    Logger.clearAll();
+    WSManager.reconnect();
+    Toast.show('Hard reset complete', 'warn');
+  },
+
+  emergencyStop() {
+    State.emergencyStop = true;
+    State.autoTrading = false;
+    State.isTrading = false;
+    document.getElementById('emergency-stop').checked = true;
+    Toast.show('🆘 EMERGENCY STOP', 'error');
+    Logger.error('Emergency stop triggered');
+  },
+
+  closeModal() {
+    document.getElementById('modal').classList.add('hidden');
+  },
+
+  loadFromStorage() {
+    try {
+      const saved = localStorage.getItem('derivai_state');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        ['virtualBalance', 'virtualProfit', 'martMultiplier', 'martMaxDepth', 'aiMode', 'aiThreshold'].forEach(k => {
+          if (parsed[k] !== undefined) State[k] = parsed[k];
+        });
+      }
+    } catch (e) { /* ignore */ }
+
+    // Save state on unload
+    window.addEventListener('beforeunload', () => {
+      localStorage.setItem('derivai_state', JSON.stringify({
+        virtualBalance: State.virtualBalance,
+        virtualProfit: State.virtualProfit,
+        martMultiplier: State.martMultiplier,
+        martMaxDepth: State.martMaxDepth,
+        aiMode: State.aiMode,
+        aiThreshold: State.aiThreshold,
+      }));
+    });
+  },
+};
+
+/* =============================================
+   BOOT
+   ============================================= */
+document.addEventListener('DOMContentLoaded', () => App.init());
+</script>
+</body>
+</html>

@@ -1,0 +1,1918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DerivAI EvenOdd Pro v2</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={darkMode:'class',theme:{extend:{colors:{gold:{300:'#F5D26A',400:'#D4A520',500:'#C9A441',600:'#A07830'}},fontFamily:{outfit:['Outfit','sans-serif'],mono:['JetBrains Mono','monospace']}}}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+/* ═══════════ CSS VARIABLES ═══════════ */
+:root{--g:#C9A441;--gl:#F0C040;--pb:#FAFAF7;--tx:#0A0A0F;--soft:#6B6B7B;--bd:#E8E8F0;--cb:#FFFFFF;--sb:#FFFFFF;--ok:#22C55E;--err:#EF4444;--warn:#F59E0B;--sidebar-w:220px;--sidebar-coll-w:64px}
+.dark{--pb:#0C0C1A;--tx:#F0F0FF;--soft:#7070A0;--bd:#22223A;--cb:#141428;--sb:#0E0E20}
+
+/* ═══════════ BASE ═══════════ */
+*{font-family:'Outfit',sans-serif;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;overflow-x:hidden;background:var(--pb);color:var(--tx)}
+.mono{font-family:'JetBrains Mono',monospace!important}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
+
+/* ═══════════ LAYOUT ═══════════ */
+#app-layout{display:flex;min-height:100vh}
+#main-content{flex:1;overflow-y:auto;max-height:100vh;min-width:0}
+
+/* ═══════════ SIDEBAR ═══════════ */
+.sidebar{background:var(--sb);border-right:1px solid var(--bd);width:var(--sidebar-w);flex-shrink:0;transition:width .28s ease,transform .28s ease;position:relative;z-index:50;display:flex;flex-direction:column}
+.sidebar.collapsed{width:var(--sidebar-coll-w)}
+.sidebar.collapsed .nav-label,.sidebar.collapsed .logo-text,.sidebar.collapsed .sidebar-section{display:none}
+.sidebar-body{flex:1;overflow-y:auto;padding:6px 10px}
+.sidebar-footer{padding:14px;border-top:1px solid var(--bd);flex-shrink:0}
+#sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:49}
+#sidebar-backdrop.active{display:block}
+
+/* ═══════════ NAVIGATION ═══════════ */
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:10px;cursor:pointer;transition:all .18s;color:var(--soft);font-size:13.5px;font-weight:500;margin-bottom:2px;border-left:3px solid transparent;user-select:none}
+.nav-item:hover{background:rgba(201,164,65,.07);color:var(--g)}
+.nav-item.active{background:rgba(201,164,65,.12);color:var(--g);border-left-color:var(--g)}
+.nav-icon{width:16px;font-size:14px;flex-shrink:0}
+.sidebar-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--soft);padding:4px 6px;margin:8px 0 4px}
+
+/* ═══════════ PAGES ═══════════ */
+.page{display:none;animation:fadeIn .22s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══════════ ANIMATIONS ═══════════ */
+@keyframes pulseGold{0%,100%{box-shadow:0 0 0 0 rgba(201,164,65,.45)}60%{box-shadow:0 0 0 8px rgba(201,164,65,0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes slideIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ═══════════ STATUS DOTS ═══════════ */
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot-connected{background:var(--ok);animation:pulseGold 2s infinite}
+.dot-disconnected{background:var(--err)}
+.dot-connecting{background:var(--warn);animation:blink 1s infinite}
+
+/* ═══════════ CARDS ═══════════ */
+.card{background:var(--cb);border:1px solid var(--bd);border-radius:14px}
+.stat-card{border-radius:14px;padding:18px;border:1px solid var(--bd);background:var(--cb)}
+
+/* ═══════════ TOAST ═══════════ */
+#toast-wrap{position:fixed;top:18px;right:18px;z-index:9999;display:flex;flex-direction:column;gap:8px;pointer-events:none;max-width:340px}
+.toast{padding:11px 16px;border-radius:12px;font-size:12.5px;font-weight:600;min-width:220px;pointer-events:all;animation:slideIn .28s ease;box-shadow:0 8px 28px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px}
+.t-ok{background:rgba(34,197,94,.93);color:#fff}
+.t-err{background:rgba(239,68,68,.93);color:#fff}
+.t-info{background:rgba(201,164,65,.95);color:#fff}
+.t-warn{background:rgba(245,158,11,.93);color:#fff}
+
+/* ═══════════ FORMS & CONTROLS ═══════════ */
+input,select,textarea{background:var(--cb)!important;color:var(--tx)!important;border:1px solid var(--bd)!important;border-radius:8px;padding:8px 12px;font-size:13px;width:100%;transition:border-color .2s}
+input:focus,select:focus{outline:none!important;border-color:var(--g)!important;box-shadow:0 0 0 3px rgba(201,164,65,.12)!important}
+label{font-size:12px;font-weight:600;color:var(--soft);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;display:block}
+.toggle{position:relative;display:inline-block;width:42px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:var(--bd);border-radius:22px;transition:.28s}
+.slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.28s}
+input:checked+.slider{background:var(--g)}
+input:checked+.slider:before{transform:translateX(20px)}
+.mkt-check{display:none}
+.mkt-check:checked+.mkt-label{border-color:var(--g);background:rgba(201,164,65,.07);color:var(--g)}
+.mkt-label{cursor:pointer;border:1px solid var(--bd);border-radius:10px;padding:7px 8px;font-size:11px;font-weight:600;transition:all .18s;display:block;text-align:center;color:var(--soft)}
+.mkt-label:hover{border-color:var(--g);color:var(--g)}
+
+/* ═══════════ BUTTONS ═══════════ */
+.btn{padding:9px 18px;border-radius:10px;font-weight:600;font-size:13px;cursor:pointer;transition:all .18s;border:none;display:inline-flex;align-items:center;gap:7px;user-select:none}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+.btn-gold{background:linear-gradient(135deg,#C9A441,#D4B040);color:#fff}
+.btn-gold:hover:not(:disabled){background:linear-gradient(135deg,#D4B040,#E0C050);transform:translateY(-1px);box-shadow:0 4px 16px rgba(201,164,65,.35)}
+.btn-outline{background:transparent;border:1px solid var(--bd)!important;color:var(--tx)}
+.btn-outline:hover:not(:disabled){border-color:var(--g)!important;color:var(--g)}
+.btn-danger{background:rgba(239,68,68,.1);color:var(--err);border:1px solid rgba(239,68,68,.22)!important}
+.btn-danger:hover:not(:disabled){background:rgba(239,68,68,.2)}
+.btn-success{background:rgba(34,197,94,.1);color:var(--ok);border:1px solid rgba(34,197,94,.22)!important}
+.btn-success:hover:not(:disabled){background:rgba(34,197,94,.2)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:8px}
+
+/* ═══════════ CHIPS & BADGES ═══════════ */
+.digit-chip{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0}
+.d-even{background:rgba(34,197,94,.14);color:#22C55E}
+.d-odd{background:rgba(239,68,68,.14);color:#EF4444}
+.sig-even{background:rgba(34,197,94,.1);color:#22C55E;border:1px solid rgba(34,197,94,.28);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;display:inline-block}
+.sig-odd{background:rgba(239,68,68,.1);color:#EF4444;border:1px solid rgba(239,68,68,.28);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;display:inline-block}
+.sig-wait{background:rgba(107,107,123,.1);color:var(--soft);border:1px solid var(--bd);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700;display:inline-block}
+
+/* ═══════════ TABLE ═══════════ */
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--soft);padding:8px 12px;border-bottom:1px solid var(--bd);text-align:left;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--bd);font-size:12.5px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(201,164,65,.02)}
+
+/* ═══════════ LOGS ═══════════ */
+.log-line{font-family:'JetBrains Mono',monospace;font-size:11px;padding:4px 10px;border-left:2px solid var(--bd);margin-bottom:2px;border-radius:0 4px 4px 0;word-break:break-word}
+.log-info{border-left-color:var(--g);background:rgba(201,164,65,.035)}
+.log-ok{border-left-color:var(--ok);background:rgba(34,197,94,.035)}
+.log-err{border-left-color:var(--err);background:rgba(239,68,68,.035)}
+.log-warn{border-left-color:var(--warn);background:rgba(245,158,11,.035)}
+
+/* ═══════════ PROGRESS ═══════════ */
+.progress-track{background:var(--bd);border-radius:99px;height:6px;overflow:hidden}
+.progress-fill{background:linear-gradient(90deg,var(--g),var(--gl));height:100%;border-radius:99px;transition:width .5s}
+
+/* ═══════════ GRADIENT UTILS ═══════════ */
+.gold-gradient{background:linear-gradient(135deg,#C9A441,#F0C040,#B08030)}
+.gold-text{background:linear-gradient(135deg,#C9A441,#F0C040);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* ═══════════ SPINNER ═══════════ */
+.spinner{width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+
+/* ═══════════ TOP BAR ═══════════ */
+#top-bar{position:sticky;top:0;z-index:100;background:var(--cb);border-bottom:1px solid var(--bd);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+#top-bar-left{display:flex;align-items:center;gap:12px;min-width:0}
+#top-bar-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.conn-badge{display:flex;align-items:center;gap:6px;background:var(--pb);border:1px solid var(--bd);border-radius:8px;padding:5px 10px}
+
+/* ═══════════ MOBILE RESPONSIVE ═══════════ */
+@media(max-width:767px){
+  .sidebar{position:fixed;left:0;top:0;height:100vh;z-index:200;transform:translateX(-100%);width:var(--sidebar-w)!important;box-shadow:4px 0 24px rgba(0,0,0,.3)}
+  .sidebar.mobile-open{transform:translateX(0)}
+  #sidebar-backdrop.active{display:block}
+  #pages-pad{padding:14px}
+  #top-bar{padding:8px 14px}
+  .stat-grid{grid-template-columns:repeat(2,1fr)!important}
+  .two-col{grid-template-columns:1fr!important}
+  .four-col{grid-template-columns:repeat(2,1fr)!important}
+  .mkt-grid{grid-template-columns:repeat(4,1fr)!important}
+  .market-overview-grid{grid-template-columns:repeat(4,1fr)!important}
+  .sub-grid-inner{grid-template-columns:repeat(4,1fr)!important}
+}
+@media(max-width:480px){
+  .stat-grid{grid-template-columns:1fr!important}
+  .four-col{grid-template-columns:1fr!important}
+  .mkt-grid{grid-template-columns:repeat(4,1fr)!important}
+  .market-overview-grid{grid-template-columns:repeat(4,1fr)!important}
+}
+</style>
+</head>
+<body class="light">
+
+<div id="toast-wrap"></div>
+<div id="sidebar-backdrop" onclick="closeSidebarMobile()"></div>
+
+<!-- ══════════════════ LAYOUT ══════════════════ -->
+<div id="app-layout">
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div style="padding:18px 14px 10px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="gold-gradient" style="width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="fas fa-robot" style="color:#fff;font-size:15px"></i>
+      </div>
+      <div class="logo-text">
+        <div style="font-size:14px;font-weight:800;line-height:1.1" class="gold-text">DerivAI</div>
+        <div style="font-size:10px;color:var(--soft);font-weight:500">EvenOdd Pro v2</div>
+      </div>
+    </div>
+  </div>
+  <div class="sidebar-body">
+    <div class="sidebar-section">Main</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)"><i class="fas fa-gauge-high nav-icon"></i><span class="nav-label">Dashboard</span></div>
+    <div class="nav-item" onclick="showPage('connection',this)"><i class="fas fa-plug nav-icon"></i><span class="nav-label">Connection</span></div>
+    <div class="nav-item" onclick="showPage('signals',this)"><i class="fas fa-brain nav-icon"></i><span class="nav-label">Signals & Analytics</span></div>
+    <div class="sidebar-section">Trading</div>
+    <div class="nav-item" onclick="showPage('strategies',this)"><i class="fas fa-sliders nav-icon"></i><span class="nav-label">Strategies</span></div>
+    <div class="nav-item" onclick="showPage('positions',this)"><i class="fas fa-arrow-trend-up nav-icon"></i><span class="nav-label">Active Positions</span></div>
+    <div class="nav-item" onclick="showPage('history',this)"><i class="fas fa-clock-rotate-left nav-icon"></i><span class="nav-label">History</span></div>
+    <div class="sidebar-section">System</div>
+    <div class="nav-item" onclick="showPage('risk',this)"><i class="fas fa-shield-halved nav-icon"></i><span class="nav-label">Risk Management</span></div>
+    <div class="nav-item" onclick="showPage('martingale',this)"><i class="fas fa-chart-line nav-icon"></i><span class="nav-label">Martingale</span></div>
+    <div class="nav-item" onclick="showPage('logs',this)"><i class="fas fa-terminal nav-icon"></i><span class="nav-label">System Logs</span></div>
+  </div>
+  <div class="sidebar-footer">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="side-dot" class="dot dot-disconnected"></span>
+      <span class="nav-label" id="side-status" style="font-size:12px;color:var(--soft);font-weight:500">Disconnected</span>
+    </div>
+    <div class="nav-label mono" id="side-balance" style="font-size:12px;font-weight:700;color:var(--g);margin-top:4px">$0.00</div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main-content">
+
+<!-- TOP BAR -->
+<div id="top-bar">
+  <div id="top-bar-left">
+    <button onclick="toggleSidebar()" class="btn btn-outline btn-sm" id="sidebar-toggle-btn"><i class="fas fa-bars"></i></button>
+    <span id="page-title" style="font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Dashboard</span>
+  </div>
+  <div id="top-bar-right">
+    <div class="conn-badge">
+      <span id="top-dot" class="dot dot-disconnected"></span>
+      <span id="top-status" style="font-size:12px;font-weight:600;color:var(--soft)">Disconnected</span>
+    </div>
+    <div class="mono" style="font-size:13px;font-weight:700;color:var(--g)" id="top-balance">$0.00</div>
+    <button onclick="toggleDark()" class="btn btn-outline btn-sm" id="dark-btn"><i class="fas fa-moon"></i></button>
+    <button onclick="resetAll()" class="btn btn-outline btn-sm" title="Reset Session Data"><i class="fas fa-rotate-right"></i></button>
+  </div>
+</div>
+
+<!-- PAGES -->
+<div id="pages-pad" style="padding:22px">
+
+<!-- ════════════ DASHBOARD ════════════ -->
+<div id="page-dashboard" class="page active">
+  <div class="stat-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px">
+    <div class="stat-card">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--soft);margin-bottom:8px">Balance</div>
+      <div class="mono" style="font-size:22px;font-weight:700;color:var(--g)" id="db-balance">$0.00</div>
+      <div style="font-size:11px;color:var(--soft);margin-top:4px" id="db-currency">USD</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--soft);margin-bottom:8px">Session P&L</div>
+      <div class="mono" style="font-size:22px;font-weight:700" id="db-pnl">$0.00</div>
+      <div style="font-size:11px;color:var(--soft);margin-top:4px" id="db-pnl-pct">0.00%</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--soft);margin-bottom:8px">Win Rate</div>
+      <div class="mono" style="font-size:22px;font-weight:700" id="db-winrate">0%</div>
+      <div style="font-size:11px;color:var(--soft);margin-top:4px" id="db-trades">0 trades</div>
+    </div>
+    <div class="stat-card">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--soft);margin-bottom:8px">Active Trades</div>
+      <div class="mono" style="font-size:22px;font-weight:700" id="db-active">0</div>
+      <div style="font-size:11px;color:var(--soft);margin-top:4px" id="db-mode">Mode: Manual</div>
+    </div>
+  </div>
+  <div class="two-col" style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px">
+    <div class="card" style="padding:18px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:14px">Session Performance</div>
+      <canvas id="chart-pnl" height="130"></canvas>
+    </div>
+    <div class="card" style="padding:18px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:14px">Win / Loss Distribution</div>
+      <canvas id="chart-dist" height="130"></canvas>
+    </div>
+  </div>
+  <div class="card" style="padding:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <span style="font-size:13px;font-weight:700">Live Market Overview</span>
+      <span style="font-size:11px;color:var(--soft)" id="db-last-update">—</span>
+    </div>
+    <div class="market-overview-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px" id="market-overview"></div>
+  </div>
+</div>
+
+<!-- ════════════ CONNECTION ════════════ -->
+<div id="page-connection" class="page">
+  <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="card" style="padding:22px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:18px"><i class="fas fa-plug" style="color:var(--g);margin-right:8px"></i>Connection Setup</div>
+      <div style="margin-bottom:14px">
+        <label>Deriv App ID</label>
+        <input type="text" id="inp-appid" value="1089" placeholder="e.g. 1089">
+      </div>
+      <div style="margin-bottom:14px">
+        <label>API Token (OAuth)</label>
+        <input type="password" id="inp-token" placeholder="Enter your Deriv API token" autocomplete="off">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:20px">
+        <button class="btn btn-gold" onclick="connectDeriv()" id="btn-connect"><i class="fas fa-plug"></i> Connect</button>
+        <button class="btn btn-danger" onclick="disconnectDeriv()" id="btn-disconnect" style="display:none"><i class="fas fa-plug-circle-xmark"></i> Disconnect</button>
+      </div>
+      <div style="margin-top:14px" id="conn-msg"></div>
+    </div>
+    <div class="card" style="padding:22px">
+      <div style="font-size:15px;font-weight:700;margin-bottom:18px"><i class="fas fa-user" style="color:var(--g);margin-right:8px"></i>Account Details</div>
+      <div id="account-info" style="color:var(--soft);font-size:13px">Not connected. Enter your API token to view account details.</div>
+    </div>
+  </div>
+  <div class="card" style="padding:22px;margin-top:18px">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px"><i class="fas fa-chart-bar" style="color:var(--g);margin-right:8px"></i>Market Subscriptions</div>
+    <div class="sub-grid-inner" style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px" id="sub-grid"></div>
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-gold btn-sm" onclick="subscribeAllMarkets()"><i class="fas fa-satellite-dish"></i> Subscribe All</button>
+      <button class="btn btn-outline btn-sm" onclick="unsubscribeAllMarkets()"><i class="fas fa-times"></i> Unsubscribe All</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ SIGNALS ════════════ -->
+<div id="page-signals" class="page">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+    <span style="font-size:15px;font-weight:700">AI Signal Engine — Live Analysis</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:12px;color:var(--soft)">Auto-refresh:</span>
+      <label class="toggle"><input type="checkbox" id="toggle-autorefresh" checked onchange="toggleAutoRefresh(this)"><span class="slider"></span></label>
+      <span style="font-size:12px;color:var(--soft)" id="refresh-countdown">—</span>
+    </div>
+  </div>
+  <div id="signal-cards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px"></div>
+</div>
+
+<!-- ════════════ STRATEGIES ════════════ -->
+<div id="page-strategies" class="page">
+  <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <!-- Manual Trade -->
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-hand-pointer" style="color:var(--g)"></i> Manual Trade Parameters
+      </div>
+      <div style="margin-bottom:12px">
+        <label>Markets (multi-select)</label>
+        <div class="mkt-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px" id="man-markets"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Trade Type</label>
+          <select id="man-type"><option value="DIGITEVEN">Even</option><option value="DIGITODD">Odd</option></select></div>
+        <div><label>Stake ($)</label><input type="number" id="man-stake" value="1.00" min="0.35" step="0.01"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Duration</label><input type="number" id="man-dur" value="1" min="1"></div>
+        <div><label>Duration Unit</label>
+          <select id="man-dur-unit"><option value="t">Ticks</option><option value="m">Minutes</option></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Take Profit ($)</label><input type="number" id="man-tp" value="10" min="0"></div>
+        <div><label>Stop Loss ($)</label><input type="number" id="man-sl" value="10" min="0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div><label>Max Concurrent</label><input type="number" id="man-maxcon" value="3" min="1"></div>
+        <div><label>Max Trades</label><input type="number" id="man-maxtr" value="50" min="1"></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-gold" style="flex:1" onclick="manualTrade()" id="btn-manual-trade"><i class="fas fa-bolt"></i> TRADE</button>
+        <button class="btn btn-danger" onclick="closeAllTrades()"><i class="fas fa-times-circle"></i> Close All</button>
+      </div>
+    </div>
+
+    <!-- AI Trade -->
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-brain" style="color:var(--g)"></i> AI Trade Parameters
+      </div>
+      <div style="margin-bottom:12px">
+        <label>Markets (multi-select)</label>
+        <div class="mkt-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px" id="ai-markets"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Base Stake ($)</label><input type="number" id="ai-stake" value="1.00" min="0.35" step="0.01"></div>
+        <div><label>Min Confidence (%)</label><input type="number" id="ai-conf" value="55" min="50" max="99"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Duration</label><input type="number" id="ai-dur" value="1" min="1"></div>
+        <div><label>Duration Unit</label>
+          <select id="ai-dur-unit"><option value="t">Ticks</option><option value="m">Minutes</option></select></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Take Profit ($)</label><input type="number" id="ai-tp" value="20" min="0"></div>
+        <div><label>Stop Loss ($)</label><input type="number" id="ai-sl" value="15" min="0"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div><label>Max Concurrent</label><input type="number" id="ai-maxcon" value="3" min="1"></div>
+        <div><label>Max Trades</label><input type="number" id="ai-maxtr" value="100" min="1"></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn btn-gold" style="flex:1" id="btn-ai-start" onclick="startAITrading()"><i class="fas fa-robot"></i> AI TRADE</button>
+        <button class="btn btn-danger" id="btn-ai-stop" style="display:none" onclick="stopAITrading()"><i class="fas fa-stop-circle"></i> STOP</button>
+        <button class="btn btn-danger btn-sm" onclick="closeAllTrades()"><i class="fas fa-times-circle"></i></button>
+      </div>
+      <div id="ai-status-bar" style="margin-top:10px;padding:8px 12px;background:rgba(201,164,65,.07);border-radius:8px;font-size:11.5px;color:var(--soft);display:none"></div>
+    </div>
+
+    <!-- Strategy: Digit Frequency -->
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-chart-bar" style="color:var(--g)"></i> Strategy 1: Digit Frequency
+        <label class="toggle" style="margin-left:auto"><input type="checkbox" id="strat-freq-en" checked><span class="slider"></span></label>
+      </div>
+      <div style="font-size:11.5px;color:var(--soft);margin-bottom:14px">Track even/odd distribution. Trade underrepresented side on statistical imbalance.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Analysis Window</label><input type="number" id="sf-window" value="100" min="20" max="500" onchange="invalidateSignalCache()">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Ticks to analyze (50–200 recommended)</div></div>
+        <div><label>Min Imbalance (%)</label><input type="number" id="sf-imbal" value="10" min="5" max="30" onchange="invalidateSignalCache()">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Min deviation from 50%</div></div>
+      </div>
+      <div><label>Signal Weight</label>
+        <input type="range" id="sf-weight" min="1" max="5" value="3" oninput="document.getElementById('sf-weight-val').textContent=this.value;invalidateSignalCache()">
+        <div style="font-size:11px;color:var(--g);font-weight:700" id="sf-weight-val">3</div></div>
+    </div>
+
+    <!-- Strategy: Streak Exhaustion -->
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-fire" style="color:var(--g)"></i> Strategy 2: Streak Exhaustion
+        <label class="toggle" style="margin-left:auto"><input type="checkbox" id="strat-streak-en" checked><span class="slider"></span></label>
+      </div>
+      <div style="font-size:11.5px;color:var(--soft);margin-bottom:14px">Detect consecutive same-type streaks. Trade the reversal after exhaustion threshold.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Min Streak Length</label><input type="number" id="ss-min" value="4" min="3" max="10" onchange="invalidateSignalCache()">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Min consecutive same type (4–6 optimal)</div></div>
+        <div><label>Max Streak Wait</label><input type="number" id="ss-max" value="8" min="4" max="15" onchange="invalidateSignalCache()">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Cap before signal expires</div></div>
+      </div>
+      <div><label>Signal Weight</label>
+        <input type="range" id="ss-weight" min="1" max="5" value="4" oninput="document.getElementById('ss-weight-val').textContent=this.value;invalidateSignalCache()">
+        <div style="font-size:11px;color:var(--g);font-weight:700" id="ss-weight-val">4</div></div>
+    </div>
+
+    <!-- Strategy: Alternation Pattern -->
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-shuffle" style="color:var(--g)"></i> Strategy 3: Alternation Pattern
+        <label class="toggle" style="margin-left:auto"><input type="checkbox" id="strat-alt-en" checked><span class="slider"></span></label>
+      </div>
+      <div style="font-size:11.5px;color:var(--soft);margin-bottom:14px">Detect rhythmic alternation (E→O→E→O). Trade continuation or reversal on pattern break.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Min Alt Cycles</label><input type="number" id="sa-min" value="4" min="2" max="10" onchange="invalidateSignalCache()">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Min alternation cycles</div></div>
+        <div><label>Alternation Ratio (%)</label><input type="number" id="sa-ratio" value="70" min="50" max="95" onchange="invalidateSignalCache()">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Min % alternations in window</div></div>
+      </div>
+      <div><label>Signal Weight</label>
+        <input type="range" id="sa-weight" min="1" max="5" value="3" oninput="document.getElementById('sa-weight-val').textContent=this.value;invalidateSignalCache()">
+        <div style="font-size:11px;color:var(--g);font-weight:700" id="sa-weight-val">3</div></div>
+    </div>
+
+    <!-- Strategy: AI Ensemble -->
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-network-wired" style="color:var(--g)"></i> Strategy 4: AI Ensemble
+        <label class="toggle" style="margin-left:auto"><input type="checkbox" id="strat-ai-en" checked><span class="slider"></span></label>
+      </div>
+      <div style="font-size:11.5px;color:var(--soft);margin-bottom:14px">Markov chain + Bayesian inference combined. Requires min confirmations before entry.</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label>Min Confirmations</label><input type="number" id="se-conf" value="3" min="2" max="5" onchange="invalidateSignalCache()">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Strategies must agree before trade fires</div></div>
+        <div><label>Min AI Probability (%)</label><input type="number" id="se-prob" value="55" min="50" max="75" onchange="invalidateSignalCache()">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">P(EVEN) or P(ODD) must exceed this</div></div>
+      </div>
+      <div><label>Markov Depth</label>
+        <input type="range" id="se-depth" min="1" max="3" value="2" oninput="document.getElementById('se-depth-val').textContent=['1st-order','2nd-order','3rd-order'][this.value-1];invalidateSignalCache()">
+        <div style="font-size:11px;color:var(--g);font-weight:700" id="se-depth-val">2nd-order</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ════════════ POSITIONS ════════════ -->
+<div id="page-positions" class="page">
+  <div class="card" style="padding:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <span style="font-size:14px;font-weight:700">Active Positions <span id="pos-count" style="color:var(--soft)">(0)</span></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-danger btn-sm" onclick="closeAllTrades()"><i class="fas fa-times-circle"></i> Close All</button>
+        <button class="btn btn-outline btn-sm" onclick="updatePositionsTable()"><i class="fas fa-sync"></i></button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Contract ID</th><th>Market</th><th>Type</th><th>Stake</th><th>Duration</th><th>Entry</th><th>Live P&L</th><th>Strategy</th><th>Status</th><th>Action</th></tr></thead>
+        <tbody id="pos-table"><tr><td colspan="10" style="text-align:center;color:var(--soft);padding:30px">No active positions</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ HISTORY ════════════ -->
+<div id="page-history" class="page">
+  <div class="card" style="padding:18px;margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+      <span style="font-size:14px;font-weight:700">Trade History <span id="hist-count" style="color:var(--soft)">(0)</span></span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="hist-filter-market" style="width:auto;padding:6px 10px" onchange="renderHistory()">
+          <option value="all">All Markets</option>
+          <option value="R_10">R_10</option><option value="R_25">R_25</option><option value="R_50">R_50</option>
+          <option value="R_75">R_75</option><option value="R_100">R_100</option>
+          <option value="1HZ10V">1HZ10V</option><option value="1HZ100V">1HZ100V</option>
+        </select>
+        <select id="hist-filter-result" style="width:auto;padding:6px 10px" onchange="renderHistory()">
+          <option value="all">All Results</option><option value="win">Wins</option><option value="loss">Losses</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="exportHistory()"><i class="fas fa-download"></i> Export</button>
+        <button class="btn btn-danger btn-sm" onclick="clearHistory()"><i class="fas fa-trash"></i> Clear</button>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="padding:18px"><div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>#</th><th>Time</th><th>Market</th><th>Type</th><th>Stake</th><th>Result</th><th>P&L</th><th>Strategy</th><th>AI Conf.</th></tr></thead>
+      <tbody id="hist-table"><tr><td colspan="9" style="text-align:center;color:var(--soft);padding:30px">No trade history</td></tr></tbody>
+    </table>
+  </div></div>
+</div>
+
+<!-- ════════════ RISK MANAGEMENT ════════════ -->
+<div id="page-risk" class="page">
+  <div class="two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-hand" style="color:var(--g)"></i> Manual Risk Controls
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label>Max Daily Loss ($)</label><input type="number" id="rm-max-loss" value="20" min="1">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Auto-stop when session loss hits this</div></div>
+        <div><label>Max Daily Profit ($)</label><input type="number" id="rm-max-profit" value="50" min="1">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Auto-stop on target</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label>Max Consecutive Losses</label><input type="number" id="rm-max-consec" value="3" min="1">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Pause after N consecutive losses</div></div>
+        <div><label>Cooldown After Loss (s)</label><input type="number" id="rm-cooldown" value="10" min="0">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Wait before next trade after loss</div></div>
+      </div>
+      <div style="margin-bottom:12px"><label>Max Trades Per Session</label><input type="number" id="rm-max-session" value="100" min="1"></div>
+      <button class="btn btn-gold btn-sm" onclick="saveRiskSettings()"><i class="fas fa-save"></i> Save Settings</button>
+    </div>
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-robot" style="color:var(--g)"></i> AI Risk Controls
+        <label class="toggle" style="margin-left:auto"><input type="checkbox" id="rm-ai-mode" onchange="toggleAIRisk(this)"><span class="slider"></span></label>
+      </div>
+      <div style="font-size:11.5px;color:var(--soft);margin-bottom:14px">AI mode dynamically adjusts risk based on current performance and market conditions.</div>
+      <div style="margin-bottom:12px"><label>Drawdown Tiers</label>
+        <div style="font-size:12px;line-height:2;padding:10px;background:var(--pb);border-radius:8px">
+          <div><span style="color:var(--ok);font-weight:700">DD &lt; 5%</span> — Full stake, normal operation</div>
+          <div><span style="color:var(--warn);font-weight:700">DD 5–10%</span> — Reduce stake by 50%</div>
+          <div><span style="color:var(--err);font-weight:700">DD 10–15%</span> — Pause 5 minutes, alert</div>
+          <div><span style="color:var(--err);font-weight:700">DD &gt; 15%</span> — Full stop, require manual restart</div>
+        </div>
+      </div>
+      <div><label>Confidence Threshold Boost</label><input type="number" id="rm-ai-boost" value="5" min="0" max="20">
+        <div style="font-size:10.5px;color:var(--soft);margin-top:3px">AI raises min confidence by this % after each loss</div></div>
+    </div>
+    <div class="card" style="padding:22px;grid-column:1/-1">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px">Live Risk Status</div>
+      <div class="four-col" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+        <div>
+          <div style="font-size:11px;color:var(--soft);font-weight:600;margin-bottom:6px">DAILY LOSS USAGE</div>
+          <div class="progress-track"><div class="progress-fill" id="rm-loss-bar" style="width:0%;background:linear-gradient(90deg,var(--warn),var(--err))"></div></div>
+          <div class="mono" style="font-size:12px;margin-top:4px" id="rm-loss-val">$0 / $20</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--soft);font-weight:600;margin-bottom:6px">PROFIT TARGET</div>
+          <div class="progress-track"><div class="progress-fill" id="rm-profit-bar" style="width:0%;background:linear-gradient(90deg,#22C55E,#4ADE80)"></div></div>
+          <div class="mono" style="font-size:12px;margin-top:4px" id="rm-profit-val">$0 / $50</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--soft);font-weight:600;margin-bottom:6px">CONSEC. LOSSES</div>
+          <div class="mono" style="font-size:20px;font-weight:700" id="rm-consec-val">0</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--soft);font-weight:600;margin-bottom:6px">SESSION TRADES</div>
+          <div class="mono" style="font-size:20px;font-weight:700" id="rm-sess-val">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MARTINGALE ════════════ -->
+<div id="page-martingale" class="page">
+  <div class="two-col" style="display:grid;grid-template-columns:1fr 1.2fr;gap:18px">
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-chart-line" style="color:var(--g)"></i> Martingale Setup
+        <label class="toggle" style="margin-left:auto"><input type="checkbox" id="mg-enabled" onchange="toggleMartingale(this)"><span class="slider"></span></label>
+      </div>
+      <div style="margin-bottom:12px"><label>Martingale Type</label>
+        <select id="mg-type" onchange="updateMartingalePreview()">
+          <option value="classic">Classic (×2 on loss)</option>
+          <option value="modified">Modified (×2.2 on loss)</option>
+          <option value="dalembert">D'Alembert (+1 unit on loss)</option>
+          <option value="fibonacci">Fibonacci (sequence on loss)</option>
+          <option value="reverse">Reverse (×2 on WIN)</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label>Base Stake ($)</label><input type="number" id="mg-base" value="0.50" min="0.35" step="0.01" oninput="updateMartingalePreview()"></div>
+        <div><label>Multiplier</label><input type="number" id="mg-mult" value="2.0" min="1.1" step="0.1" oninput="updateMartingalePreview()"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div><label>Max Steps</label><input type="number" id="mg-steps" value="6" min="1" max="10" oninput="updateMartingalePreview()">
+          <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Max consecutive loss recoveries</div></div>
+        <div><label>Reset On</label>
+          <select id="mg-reset"><option value="win">Win</option><option value="profit">Net Profit</option></select></div>
+      </div>
+      <div style="margin-bottom:14px"><label>Stop if Total Exposure Exceeds ($)</label>
+        <input type="number" id="mg-max-exp" value="50" min="1">
+        <div style="font-size:10.5px;color:var(--soft);margin-top:3px">Halt martingale for capital protection</div></div>
+      <div id="mg-live" style="padding:12px;background:var(--pb);border-radius:10px;font-size:12px">
+        <div style="font-weight:700;margin-bottom:6px;color:var(--g)">Live Martingale State</div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--soft)">Current Step</span><span class="mono" id="mg-cur-step">0</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px"><span style="color:var(--soft)">Current Stake</span><span class="mono" id="mg-cur-stake">$0.50</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px"><span style="color:var(--soft)">Total Exposure</span><span class="mono" id="mg-cur-exp">$0.00</span></div>
+      </div>
+    </div>
+    <div class="card" style="padding:22px">
+      <div style="font-size:14px;font-weight:700;margin-bottom:16px">Stake Sequence Preview</div>
+      <canvas id="chart-martingale" height="200"></canvas>
+      <div id="mg-sequence" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px"></div>
+      <div style="margin-top:14px;padding:12px;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.2);border-radius:10px;font-size:11.5px;color:var(--soft)">
+        <i class="fas fa-triangle-exclamation" style="color:var(--err);margin-right:6px"></i>
+        <strong>Risk Warning:</strong> Martingale carries exponential loss risk. Max 6 steps recommended. Always set a max exposure limit.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ LOGS ════════════ -->
+<div id="page-logs" class="page">
+  <div class="card" style="padding:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+      <span style="font-size:14px;font-weight:700">System Logs <span id="log-count" style="color:var(--soft)">(0)</span></span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="log-filter" style="width:auto;padding:6px 10px" onchange="renderLogs()">
+          <option value="all">All Types</option><option value="info">Info</option>
+          <option value="ok">Success</option><option value="err">Error</option><option value="warn">Warning</option>
+        </select>
+        <button class="btn btn-outline btn-sm" onclick="exportLogs()"><i class="fas fa-download"></i> Export</button>
+        <button class="btn btn-danger btn-sm" onclick="clearLogs()"><i class="fas fa-trash"></i> Clear</button>
+      </div>
+    </div>
+    <div id="log-container" style="max-height:70vh;overflow-y:auto;display:flex;flex-direction:column;gap:1px"></div>
+  </div>
+</div>
+
+</div><!-- /pages-pad -->
+</div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<!-- ══════════════════ JAVASCRIPT ══════════════════ -->
+<script>
+'use strict';
+
+// ════════════ CONSTANTS ════════════
+const MARKETS = [
+  {sym:'R_10',  name:'Vol 10',      short:'V10'},
+  {sym:'R_25',  name:'Vol 25',      short:'V25'},
+  {sym:'R_50',  name:'Vol 50',      short:'V50'},
+  {sym:'R_75',  name:'Vol 75',      short:'V75'},
+  {sym:'R_100', name:'Vol 100',     short:'V100'},
+  {sym:'1HZ10V',name:'Vol 10(1s)',  short:'V10s'},
+  {sym:'1HZ100V',name:'Vol 100(1s)',short:'V100s'}
+];
+
+// ════════════ REQ ID (Deriv requires INTEGER req_id — NEVER string) ════════════
+let _reqIdCounter = 1;
+const nextReqId = () => _reqIdCounter++;
+
+// ════════════ STATE ════════════
+const S = {
+  // WebSocket
+  ws: null,
+  wsState: 'disconnected', // 'disconnected' | 'connecting' | 'connected'
+  reconnectTimer: null,
+  reconnectAttempts: 0,
+  heartbeatTimer: null,
+  msgQueue: [], // messages queued while connecting/reconnecting
+  _connToken: null, // stored for reconnect
+  _connAppId: null,
+
+  // Account
+  authorized: false,
+  account: null,
+  balance: 0,
+  currency: 'USD',
+
+  // Subscriptions — maps sym → Deriv subscription ID (for proper per-symbol forget)
+  subIds: {},
+  subscriptions: {}, // sym → boolean (is subscribed)
+
+  // Markets
+  markets: {},
+
+  // Trades
+  activeTrades: [],
+  pendingCloses: new Set(), // contract IDs with pending sell request (prevent double-close)
+  pendingProposals: {},     // reqId → trade params (proposal → buy flow)
+  history: [],
+
+  // Stats
+  stats: {total:0, wins:0, losses:0, pnl:0, consec_losses:0, consec_wins:0, startBalance:0},
+  pnlHistory: [],
+
+  // Risk
+  risk: {maxLoss:20, maxProfit:50, maxConsec:3, cooldown:10, maxSession:100},
+
+  // AI Trading
+  aiTrading: {running:false, timer:null, cooldown:0},
+
+  // Martingale
+  martingale: {enabled:false, step:0, currentStake:0.5, totalExp:0},
+
+  // Logs
+  logs: [],
+
+  // Signal cache invalidation flag
+  signalDirty: false,
+};
+
+// Initialize market state
+MARKETS.forEach(m => {
+  S.markets[m.sym] = {ticks:[], digits:[], signal:null, subscribed:false, lastTick:null};
+});
+
+// ════════════ UTILITIES ════════════
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+function downloadText(text, filename) {
+  const a = document.createElement('a');
+  a.href = 'data:text/plain;charset=utf-8,' + encodeURIComponent(text);
+  a.download = filename;
+  a.click();
+}
+
+function invalidateSignalCache() {
+  S.signalDirty = true;
+  MARKETS.forEach(m => { S.markets[m.sym].signal = null; });
+}
+
+// ════════════ STORAGE ════════════
+function saveState() {
+  try {
+    localStorage.setItem('derivai_history', JSON.stringify(S.history.slice(-500)));
+    localStorage.setItem('derivai_stats', JSON.stringify(S.stats));
+    localStorage.setItem('derivai_pnlhist', JSON.stringify(S.pnlHistory.slice(-200)));
+    localStorage.setItem('derivai_risk', JSON.stringify(S.risk));
+    // logs saved separately (less frequently)
+    localStorage.setItem('derivai_logs', JSON.stringify(S.logs.slice(-200)));
+  } catch(e) { console.warn('saveState failed:', e); }
+}
+
+function loadState() {
+  try {
+    const h = localStorage.getItem('derivai_history'); if(h) S.history = JSON.parse(h);
+    const st = localStorage.getItem('derivai_stats'); if(st) Object.assign(S.stats, JSON.parse(st));
+    const p = localStorage.getItem('derivai_pnlhist'); if(p) S.pnlHistory = JSON.parse(p);
+    const r = localStorage.getItem('derivai_risk'); if(r) Object.assign(S.risk, JSON.parse(r));
+    const l = localStorage.getItem('derivai_logs'); if(l) S.logs = JSON.parse(l);
+  } catch(e) { console.warn('loadState failed:', e); }
+}
+
+// Periodic autosave (every 60s) — don't save on every tick
+setInterval(() => { if(S.stats.total > 0) saveState(); }, 60000);
+
+// ════════════ LOGGING ════════════
+// NOTE: saveState removed from log() — it was called on every tick via log() causing massive perf hit
+function log(msg, type = 'info') {
+  const entry = {t: Date.now(), msg, type};
+  S.logs.unshift(entry);
+  if (S.logs.length > 500) S.logs.pop();
+  // Only update logs UI if that page is visible
+  if (document.getElementById('page-logs').classList.contains('active')) {
+    _renderLogsImmediate();
+  }
+  // Update count badge always
+  const el = document.getElementById('log-count');
+  if (el) el.textContent = `(${S.logs.length})`;
+}
+
+function _renderLogsImmediate() {
+  const c = document.getElementById('log-container');
+  if (!c) return;
+  const f = document.getElementById('log-filter')?.value || 'all';
+  const filtered = S.logs.filter(l => f === 'all' || l.type === f);
+  c.innerHTML = filtered.slice(0, 300).map(l => {
+    const t = new Date(l.t).toLocaleTimeString();
+    return `<div class="log-line log-${l.type}"><span style="color:var(--soft)">[${t}]</span> <span style="color:var(--g)">[${l.type.toUpperCase()}]</span> ${l.msg}</div>`;
+  }).join('');
+}
+
+function renderLogs() { _renderLogsImmediate(); }
+function clearLogs() { S.logs = []; saveState(); renderLogs(); toast('Logs cleared', 'info'); }
+function exportLogs() {
+  const d = S.logs.map(l => `[${new Date(l.t).toISOString()}] [${l.type.toUpperCase()}] ${l.msg}`).join('\n');
+  downloadText(d, 'derivai_logs.txt');
+}
+
+// ════════════ TOAST ════════════
+function toast(msg, type = 'info', duration = 3500) {
+  const w = document.getElementById('toast-wrap');
+  const d = document.createElement('div');
+  const icons = {ok:'fa-check-circle', err:'fa-times-circle', info:'fa-bell', warn:'fa-triangle-exclamation'};
+  d.className = `toast t-${type}`;
+  d.innerHTML = `<i class="fas ${icons[type]||'fa-info-circle'}"></i><span>${msg}</span>`;
+  w.appendChild(d);
+  setTimeout(() => {
+    d.style.opacity = '0'; d.style.transform = 'translateX(110%)'; d.style.transition = 'all .3s';
+    setTimeout(() => d.remove(), 320);
+  }, duration);
+}
+
+// ════════════ WEBSOCKET LAYER ════════════
+
+function connectDeriv() {
+  const token = document.getElementById('inp-token').value.trim();
+  const appid = document.getElementById('inp-appid').value.trim() || '1089';
+  if (!token) { toast('Please enter your API token', 'err'); return; }
+  localStorage.setItem('derivai_token', token);
+  localStorage.setItem('derivai_appid', appid);
+  S._connToken = token;
+  S._connAppId = appid;
+  S.reconnectAttempts = 0;
+  initWS();
+}
+
+function disconnectDeriv() {
+  // FIX: clear reconnect timer so it doesn't fire after manual disconnect
+  if (S.reconnectTimer) { clearTimeout(S.reconnectTimer); S.reconnectTimer = null; }
+  stopHeartbeat();
+  S._connToken = null; // FIX: prevent auto-reconnect after manual disconnect
+  if (S.ws) { try { S.ws.close(1000, 'User disconnect'); } catch(e){} }
+  S.wsState = 'disconnected';
+  S.authorized = false;
+  S.msgQueue = [];
+  updateConnectionUI();
+  stopAITrading();
+  log('Manually disconnected', 'warn');
+}
+
+function initWS() {
+  if (!S._connToken) return; // guard: no reconnect if manually disconnected
+  if (S.ws && S.ws.readyState < 2) { try { S.ws.close(); } catch(e){} }
+  S.wsState = 'connecting';
+  updateConnectionUI();
+  const url = `wss://ws.binaryws.com/websockets/v3?app_id=${S._connAppId}`;
+  log(`Connecting to Deriv API (app_id=${S._connAppId})...`, 'info');
+  try {
+    S.ws = new WebSocket(url);
+  } catch(e) {
+    log('WebSocket creation failed: ' + e.message, 'err');
+    setConnMsg('WebSocket creation failed: ' + e.message, true);
+    scheduleReconnect();
+    return;
+  }
+
+  S.ws.onopen = () => {
+    log('WebSocket connected — authorizing...', 'info');
+    // Send authorize immediately (don't queue)
+    S.ws.send(JSON.stringify({authorize: S._connToken, req_id: nextReqId()}));
+  };
+
+  S.ws.onmessage = (ev) => {
+    let d;
+    try { d = JSON.parse(ev.data); }
+    catch(e) { log('JSON parse error: ' + e.message, 'err'); return; }
+    handleMsg(d);
+  };
+
+  S.ws.onclose = (ev) => {
+    stopHeartbeat();
+    S.wsState = 'disconnected';
+    S.authorized = false;
+    updateConnectionUI();
+    if (S._connToken) { // only reconnect if not manually disconnected
+      log(`WebSocket closed (code ${ev.code}) — scheduling reconnect...`, 'warn');
+      scheduleReconnect();
+    }
+  };
+
+  S.ws.onerror = (ev) => {
+    log('WebSocket error — check network/token', 'err');
+  };
+}
+
+function scheduleReconnect() {
+  if (!S._connToken) return;
+  if (S.reconnectTimer) clearTimeout(S.reconnectTimer);
+  S.reconnectAttempts++;
+  const delay = Math.min(1000 * Math.pow(1.5, S.reconnectAttempts), 30000);
+  log(`Reconnect attempt ${S.reconnectAttempts} in ${(delay/1000).toFixed(1)}s`, 'warn');
+  S.reconnectTimer = setTimeout(initWS, delay);
+}
+
+// FIX: proper message queue — messages sent while connecting are queued and flushed after auth
+function wsSend(obj) {
+  if (S.ws && S.ws.readyState === WebSocket.OPEN) {
+    S.ws.send(JSON.stringify(obj));
+    return true;
+  }
+  if (S.wsState === 'connecting') {
+    S.msgQueue.push(obj);
+    return false;
+  }
+  log('WS not ready — message dropped (reconnect first)', 'warn');
+  return false;
+}
+
+function flushMsgQueue() {
+  while (S.msgQueue.length > 0 && S.ws && S.ws.readyState === WebSocket.OPEN) {
+    const msg = S.msgQueue.shift();
+    S.ws.send(JSON.stringify(msg));
+  }
+}
+
+// FIX: Heartbeat ping every 25s to detect silent connection drops
+function startHeartbeat() {
+  stopHeartbeat();
+  S.heartbeatTimer = setInterval(() => {
+    if (S.wsState === 'connected' && S.ws && S.ws.readyState === WebSocket.OPEN) {
+      S.ws.send(JSON.stringify({ping: 1, req_id: nextReqId()}));
+    }
+  }, 25000);
+}
+function stopHeartbeat() {
+  if (S.heartbeatTimer) { clearInterval(S.heartbeatTimer); S.heartbeatTimer = null; }
+}
+
+// ════════════ MESSAGE HANDLER ════════════
+function handleMsg(d) {
+  // FIX: pong response (heartbeat)
+  if (d.msg_type === 'ping') return;
+
+  if (d.error) {
+    const code = d.error.code || 'UNKNOWN';
+    const message = d.error.message || 'Unknown error';
+    log(`API Error [${code}]: ${message}`, 'err');
+    // Don't toast every API error to avoid spam — only important ones
+    if (code !== 'AlreadySubscribed' && code !== 'MarketIsClosed') {
+      toast(message, 'err');
+    }
+    // Clean up pending proposal if error is for it
+    if (d.req_id && S.pendingProposals[d.req_id]) {
+      delete S.pendingProposals[d.req_id];
+    }
+    return;
+  }
+
+  switch(d.msg_type) {
+    case 'authorize': handleAuth(d.authorize); break;
+    case 'tick': handleTick(d.tick); break;
+    case 'proposal': handleProposal(d); break;
+    case 'buy': handleBuy(d.buy, d.req_id); break;
+    case 'proposal_open_contract': handlePOC(d.proposal_open_contract); break;
+    case 'balance':
+      if (d.balance) {
+        S.balance = parseFloat(d.balance.balance);
+        S.currency = d.balance.currency;
+        updateBalanceUI();
+      }
+      break;
+    case 'sell': log(`Sell confirmed: contract ${d.sell?.contract_id || '?'}`, 'ok'); break;
+    case 'forget': break;
+    case 'forget_all': break;
+    default:
+      // Log unhandled types in debug (not error)
+      if (d.msg_type) log(`Unhandled msg_type: ${d.msg_type}`, 'info');
+  }
+}
+
+function handleAuth(a) {
+  if (!a) { log('Authorization failed — check token', 'err'); return; }
+  S.authorized = true;
+  S.account = a;
+  S.balance = parseFloat(a.balance || 0);
+  S.currency = a.currency || 'USD';
+  S.stats.startBalance = S.balance;
+  S.wsState = 'connected';
+  S.reconnectAttempts = 0;
+  updateConnectionUI();
+  renderAccountInfo();
+  startHeartbeat();
+  // Subscribe to balance updates
+  wsSend({balance: 1, subscribe: 1, req_id: nextReqId()});
+  log(`Authorized: ${a.loginid} (${a.fullname || a.email || ''}) Balance: ${a.balance} ${a.currency}`, 'ok');
+  toast(`Connected as ${a.loginid}`, 'ok');
+  // Flush any queued messages (e.g. subscription requests)
+  flushMsgQueue();
+  // Auto-subscribe markets after connection
+  autoSubscribeMarkets();
+}
+
+function updateConnectionUI() {
+  const cls = S.wsState;
+  const labels = {connected:'Connected', connecting:'Connecting...', disconnected:'Disconnected'};
+  const lbl = labels[cls] || 'Disconnected';
+  ['side-dot','top-dot'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.className = 'dot dot-' + cls; }
+  });
+  ['side-status','top-status'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.textContent = lbl;
+  });
+  const bc = document.getElementById('btn-connect');
+  const bd = document.getElementById('btn-disconnect');
+  if (bc) bc.style.display = S.authorized ? 'none' : '';
+  if (bd) bd.style.display = S.authorized ? '' : 'none';
+  setConnMsg(
+    S.authorized ? `✓ Authorized as ${S.account?.loginid || ''}` :
+    (S.wsState === 'connecting' ? 'Connecting...' : 'Disconnected'),
+    !S.authorized && S.wsState === 'disconnected'
+  );
+}
+
+function setConnMsg(msg, err = false) {
+  const el = document.getElementById('conn-msg');
+  if (!el) return;
+  el.innerHTML = `<span style="color:${err ? 'var(--err)' : 'var(--ok)'};font-size:12.5px;font-weight:600">${msg}</span>`;
+}
+
+function renderAccountInfo() {
+  const a = S.account; if (!a) return;
+  document.getElementById('account-info').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px">
+      <div><span style="color:var(--soft)">Login ID</span><br><strong>${a.loginid||'—'}</strong></div>
+      <div><span style="color:var(--soft)">Name</span><br><strong>${a.fullname||a.email||'—'}</strong></div>
+      <div><span style="color:var(--soft)">Balance</span><br><strong class="mono" style="color:var(--g)">${S.balance.toFixed(2)} ${S.currency}</strong></div>
+      <div><span style="color:var(--soft)">Account Type</span><br><strong>${a.account_type||'—'}</strong></div>
+      <div><span style="color:var(--soft)">Country</span><br><strong>${a.country||'—'}</strong></div>
+      <div><span style="color:var(--soft)">Email</span><br><strong>${a.email||'—'}</strong></div>
+    </div>`;
+}
+
+function updateBalanceUI() {
+  const fmt = `${S.balance.toFixed(2)} ${S.currency}`;
+  const ids = ['side-balance','top-balance'];
+  ids.forEach(id => { const el = document.getElementById(id); if(el) el.textContent = fmt; });
+  const dbb = document.getElementById('db-balance'); if(dbb) dbb.textContent = S.balance.toFixed(2);
+  const dbc = document.getElementById('db-currency'); if(dbc) dbc.textContent = S.currency;
+}
+
+// ════════════ TICK SUBSCRIPTIONS ════════════
+
+function subscribeMarket(sym) {
+  if (!S.authorized) { toast('Connect first', 'err'); return; }
+  if (S.subscriptions[sym]) return; // already subscribed
+  const req_id = nextReqId();
+  wsSend({ticks: sym, subscribe: 1, req_id});
+  S.subscriptions[sym] = true; // optimistic — will confirm via first tick
+  S.markets[sym].subscribed = true;
+  log(`Subscribed to ${sym}`, 'ok');
+  updateSubGrid();
+}
+
+// FIX: per-symbol unsubscribe using tracked subscription ID — NOT forget_all
+function unsubscribeMarket(sym) {
+  const subId = S.subIds[sym];
+  if (subId) {
+    wsSend({forget: subId, req_id: nextReqId()});
+    delete S.subIds[sym];
+  } else {
+    // Fallback: forget_all for this market only (less ideal)
+    log(`No sub ID for ${sym} — cannot cleanly unsubscribe`, 'warn');
+  }
+  S.subscriptions[sym] = false;
+  S.markets[sym].subscribed = false;
+  updateSubGrid();
+}
+
+function subscribeAllMarkets() {
+  if (!S.authorized) { toast('Connect first', 'err'); return; }
+  MARKETS.forEach(m => subscribeMarket(m.sym));
+  toast('Subscribed to all markets', 'ok');
+}
+
+function unsubscribeAllMarkets() {
+  wsSend({forget_all: 'ticks', req_id: nextReqId()});
+  MARKETS.forEach(m => {
+    S.subscriptions[m.sym] = false;
+    S.markets[m.sym].subscribed = false;
+    delete S.subIds[m.sym];
+  });
+  updateSubGrid();
+  toast('Unsubscribed from all markets', 'info');
+}
+
+function autoSubscribeMarkets() {
+  setTimeout(() => MARKETS.forEach(m => subscribeMarket(m.sym)), 600);
+}
+
+// Debounced UI updates for high-frequency tick events
+const _debouncedUpdateMarketOverview = debounce(updateMarketOverview, 200);
+const _debouncedUpdateSignalCards = debounce(() => {
+  if (document.getElementById('page-signals').classList.contains('active')) updateSignalCards();
+}, 250);
+
+function handleTick(tick) {
+  if (!tick) return;
+  const sym = tick.symbol;
+  if (!S.markets[sym]) return;
+
+  const md = S.markets[sym];
+  md.lastTick = tick;
+  md.ticks.unshift(tick.quote);
+  if (md.ticks.length > 500) md.ticks.pop();
+
+  // FIX: store subscription ID for proper per-symbol unsubscribe
+  if (tick.subscription?.id && !S.subIds[sym]) {
+    S.subIds[sym] = tick.subscription.id;
+  }
+
+  const digit = getLastDigit(tick.quote);
+  md.digits.unshift(digit);
+  if (md.digits.length > 500) md.digits.pop();
+
+  // Re-analyze every 5 ticks or on first 10 ticks
+  if (md.digits.length % 5 === 0 || md.digits.length < 10) {
+    md.signal = analyzeMarket(sym);
+  }
+
+  // FIX: debounced DOM updates — was causing massive thrashing on every tick
+  _debouncedUpdateMarketOverview();
+  _debouncedUpdateSignalCards();
+
+  const el = document.getElementById('db-last-update');
+  if (el) el.textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+function getLastDigit(price) {
+  const s = price.toString().replace('.', '');
+  return parseInt(s[s.length - 1], 10);
+}
+
+// ════════════ AI ENGINE ════════════
+
+function analyzeMarket(sym) {
+  const md = S.markets[sym];
+  const window = parseInt(document.getElementById('sf-window')?.value || 100);
+  const digits = md.digits.slice(0, window);
+  if (digits.length < 10) return null;
+
+  const evenD = digits.filter(d => d % 2 === 0);
+  const evenRatio = evenD.length / digits.length;
+  const streak = getStreak(digits);
+  const alt = getAlternationPattern(digits);
+  const markov = markovChain(digits);
+  // FIX: pass digits to bayesianUpdate so getLastOfAlt uses actual data
+  const bayes = bayesianUpdate(evenRatio, streak, alt, digits);
+
+  const pEven = markov.even * 0.4 + bayes.even * 0.6;
+  const pOdd = 1 - pEven;
+  const confidence = Math.max(pEven, pOdd) * 100;
+  const direction = pEven > pOdd ? 'EVEN' : 'ODD';
+
+  let confirmations = 0;
+  const reasons = [];
+
+  const minImbal = parseFloat(document.getElementById('sf-imbal')?.value || 10) / 100;
+  if (Math.abs(evenRatio - 0.5) >= minImbal && document.getElementById('strat-freq-en')?.checked) {
+    confirmations++;
+    const side = evenRatio > 0.5 ? 'ODD' : 'EVEN';
+    reasons.push(`⚖ Frequency: ${(evenRatio*100).toFixed(0)}% even → trade ${side}`);
+  }
+
+  const minStreak = parseInt(document.getElementById('ss-min')?.value || 4);
+  if (streak.length >= minStreak && document.getElementById('strat-streak-en')?.checked) {
+    confirmations++;
+    reasons.push(`🔥 Streak exhaustion: ${streak.length}× ${streak.type}`);
+  }
+
+  const minAltRatio = parseInt(document.getElementById('sa-ratio')?.value || 70) / 100;
+  const minAltCycles = parseInt(document.getElementById('sa-min')?.value || 4);
+  if (alt.ratio >= minAltRatio && alt.alternations >= minAltCycles && document.getElementById('strat-alt-en')?.checked) {
+    confirmations++;
+    reasons.push(`🔀 Alternation: ${(alt.ratio*100).toFixed(0)}%`);
+  }
+
+  const minConfPct = parseInt(document.getElementById('se-prob')?.value || 55);
+  if (confidence >= minConfPct && document.getElementById('strat-ai-en')?.checked) {
+    confirmations++;
+    reasons.push(`🤖 Markov+Bayes: P(${direction})=${confidence.toFixed(1)}%`);
+  }
+
+  const minReq = parseInt(document.getElementById('se-conf')?.value || 3);
+  const minAIConf = parseInt(document.getElementById('ai-conf')?.value || 55);
+
+  return {
+    sym, direction, confidence, confirmations,
+    pEven: pEven * 100, pOdd: pOdd * 100,
+    tradeable: confirmations >= minReq && confidence >= minAIConf,
+    reasons, streak, evenRatio, alt, timestamp: Date.now()
+  };
+}
+
+function getStreak(digits) {
+  if (!digits.length) return {type:'none', length:0};
+  const type = digits[0] % 2 === 0 ? 'even' : 'odd';
+  let len = 1;
+  for (let i = 1; i < digits.length; i++) {
+    if ((digits[i] % 2 === 0 ? 'even' : 'odd') === type) len++;
+    else break;
+  }
+  return {type, length:len};
+}
+
+function getAlternationPattern(digits) {
+  const sl = digits.slice(0, 20);
+  let alts = 0;
+  for (let i = 1; i < sl.length; i++) if ((sl[i-1] % 2) !== (sl[i] % 2)) alts++;
+  return {alternations: alts, total: sl.length - 1, ratio: sl.length > 1 ? alts / (sl.length - 1) : 0};
+}
+
+function markovChain(digits) {
+  const tr = {even:{even:1,odd:1}, odd:{even:1,odd:1}};
+  for (let i = 1; i < digits.length; i++) {
+    const prev = digits[i-1] % 2 === 0 ? 'even' : 'odd';
+    const curr = digits[i]   % 2 === 0 ? 'even' : 'odd';
+    tr[prev][curr]++;
+  }
+  const last = digits[0] % 2 === 0 ? 'even' : 'odd';
+  const tot = tr[last].even + tr[last].odd;
+  return {even: tr[last].even / tot, odd: tr[last].odd / tot};
+}
+
+// FIX: getLastOfAlt now uses ACTUAL digit data instead of Math.random()
+function getLastOfAlt(digits) {
+  return digits.length > 0 ? (digits[0] % 2 === 0 ? 'even' : 'odd') : 'even';
+}
+
+// FIX: receives digits parameter so bayesian alternation branch is deterministic
+function bayesianUpdate(evenRatio, streak, alt, digits) {
+  let pe = 0.5, po = 0.5;
+  if (evenRatio > 0.6) po *= (1 + (evenRatio - 0.5) * 2);
+  if (evenRatio < 0.4) pe *= (1 + (0.5 - evenRatio) * 2);
+  if (streak.length >= 4) {
+    if (streak.type === 'even') po *= (1 + streak.length * 0.08);
+    else pe *= (1 + streak.length * 0.08);
+  }
+  if (alt.ratio > 0.7) {
+    const last = getLastOfAlt(digits); // FIX: deterministic — uses real data
+    if (last === 'odd')  pe = pe * 1.1;
+    if (last === 'even') po = po * 1.1;
+  }
+  const tot = pe + po;
+  return {even: pe / tot, odd: po / tot};
+}
+
+// ════════════ TRADE ENGINE ════════════
+
+function manualTrade() {
+  if (!S.authorized) { toast('Connect first', 'err'); return; }
+  const mkts = getSelectedMarkets('man-markets');
+  if (!mkts.length) { toast('Select at least one market', 'err'); return; }
+  const type = document.getElementById('man-type').value;
+  const stake = parseFloat(document.getElementById('man-stake').value) || 1;
+  const dur = parseInt(document.getElementById('man-dur').value) || 1;
+  const durUnit = document.getElementById('man-dur-unit').value;
+  const maxCon = parseInt(document.getElementById('man-maxcon').value) || 3;
+  if (S.activeTrades.length >= maxCon) { toast(`Max ${maxCon} concurrent trades reached`, 'warn'); return; }
+  const reason = riskCheck();
+  if (reason !== true) { toast(reason, 'err'); return; }
+  mkts.forEach(sym => placeTrade(sym, type, stake, dur, durUnit, 'MANUAL', null));
+}
+
+function startAITrading() {
+  if (!S.authorized) { toast('Connect first', 'err'); return; }
+  const mkts = getSelectedMarkets('ai-markets');
+  if (!mkts.length) { toast('Select at least one market', 'err'); return; }
+  S.aiTrading.running = true;
+  S.aiTrading.cooldown = 0;
+  document.getElementById('btn-ai-start').style.display = 'none';
+  document.getElementById('btn-ai-stop').style.display = '';
+  const bar = document.getElementById('ai-status-bar');
+  bar.style.display = '';
+  bar.textContent = 'AI Engine running — scanning markets...';
+  log('AI Trading started', 'ok');
+  toast('AI Trading engine started', 'ok');
+  updateDashboard();
+  aiLoop();
+}
+
+function stopAITrading() {
+  S.aiTrading.running = false;
+  if (S.aiTrading.timer) { clearTimeout(S.aiTrading.timer); S.aiTrading.timer = null; }
+  const start = document.getElementById('btn-ai-start');
+  const stop = document.getElementById('btn-ai-stop');
+  if (start) start.style.display = '';
+  if (stop) stop.style.display = 'none';
+  const bar = document.getElementById('ai-status-bar');
+  if (bar) bar.style.display = 'none';
+  log('AI Trading stopped', 'warn');
+  toast('AI Trading stopped', 'warn');
+  updateDashboard();
+}
+
+function aiLoop() {
+  if (!S.aiTrading.running) return;
+
+  // FIX: cooldown decrements ONCE per loop cycle (not once per market)
+  if (S.aiTrading.cooldown > 0) {
+    S.aiTrading.cooldown--;
+    const bar = document.getElementById('ai-status-bar');
+    if (bar) bar.textContent = `AI cooldown: ${S.aiTrading.cooldown} ticks remaining...`;
+    S.aiTrading.timer = setTimeout(aiLoop, 1000);
+    return;
+  }
+
+  const mkts = getSelectedMarkets('ai-markets');
+  const maxCon = parseInt(document.getElementById('ai-maxcon').value) || 3;
+  const maxTr = parseInt(document.getElementById('ai-maxtr').value) || 100;
+  const stake = parseFloat(document.getElementById('ai-stake').value) || 1;
+  const dur = parseInt(document.getElementById('ai-dur').value) || 1;
+  const durUnit = document.getElementById('ai-dur-unit').value;
+
+  if (S.stats.total >= maxTr) { stopAITrading(); toast('Max trades reached', 'info'); return; }
+
+  const riskResult = riskCheck();
+  if (riskResult !== true) {
+    log(`AI stopped: ${riskResult}`, 'warn');
+    stopAITrading();
+    return;
+  }
+
+  mkts.forEach(sym => {
+    if (S.activeTrades.length >= maxCon) return;
+    const signal = S.markets[sym]?.signal;
+    if (!signal || !signal.tradeable) return;
+    const type = signal.direction === 'EVEN' ? 'DIGITEVEN' : 'DIGITODD';
+    const actualStake = getMartingaleStake(stake);
+    log(`AI Signal: ${sym} → ${signal.direction} (${signal.confidence.toFixed(1)}% conf, ${signal.confirmations} confirms)`, 'info');
+    placeTrade(sym, type, actualStake, dur, durUnit, 'AI', signal);
+  });
+
+  const bar = document.getElementById('ai-status-bar');
+  if (bar) bar.textContent = `AI running — Trades: ${S.stats.total} | P&L: ${S.stats.pnl >= 0 ? '+' : ''}$${S.stats.pnl.toFixed(2)} | ${S.activeTrades.length} active`;
+
+  S.aiTrading.timer = setTimeout(aiLoop, 2000);
+}
+
+function placeTrade(sym, type, stake, dur, durUnit, source, signal) {
+  const reqId = nextReqId();
+  S.pendingProposals[reqId] = {sym, type, stake, dur, durUnit, source, signal, reqId};
+  wsSend({
+    proposal: 1, req_id: reqId, amount: stake, basis: 'stake',
+    contract_type: type, currency: S.currency || 'USD',
+    duration: dur, duration_unit: durUnit, symbol: sym
+  });
+  log(`Proposal: ${sym} ${type} $${stake} ${dur}${durUnit} [${source}]`, 'info');
+}
+
+function handleProposal(d) {
+  const p = S.pendingProposals[d.req_id];
+  if (!p || !d.proposal) { delete S.pendingProposals[d.req_id]; return; }
+  delete S.pendingProposals[d.req_id];
+  const buyReqId = nextReqId();
+  S.pendingProposals[buyReqId] = p;
+  wsSend({buy: d.proposal.id, price: d.proposal.ask_price, req_id: buyReqId});
+  log(`Buying: ${p.sym} @ $${d.proposal.ask_price}`, 'info');
+}
+
+function handleBuy(buy, reqId) {
+  if (!buy) return;
+  const p = S.pendingProposals[reqId];
+  delete S.pendingProposals[reqId];
+  const trade = {
+    id: buy.contract_id,
+    sym: p?.sym, type: p?.type, stake: p?.stake,
+    dur: p?.dur, durUnit: p?.durUnit,
+    source: p?.source || 'MANUAL',
+    signal: p?.signal,
+    entryTime: Date.now(),
+    status: 'active',
+    pnl: 0, livePnl: 0,
+    buyPrice: buy.buy_price
+  };
+  S.activeTrades.push(trade);
+  // Subscribe to live contract updates
+  wsSend({proposal_open_contract: 1, contract_id: buy.contract_id, subscribe: 1, req_id: nextReqId()});
+  log(`Contract bought: #${buy.contract_id} on ${trade.sym}`, 'ok');
+  toast(`Trade open: ${trade.sym} ${trade.type === 'DIGITEVEN' ? 'EVEN' : 'ODD'}`, 'ok');
+  updatePositionsTable();
+  updateDashboard();
+}
+
+// FIX: handlePOC now handles both live updates AND settlement
+function handlePOC(poc) {
+  if (!poc) return;
+  const idx = S.activeTrades.findIndex(t => t.id == poc.contract_id);
+  if (idx === -1) return;
+
+  if (!poc.is_sold) {
+    // Live update — update unrealized P&L
+    S.activeTrades[idx].livePnl = parseFloat(poc.profit) || 0;
+    // Throttle positions table update during live P&L updates
+    _debouncedUpdatePositions();
+    return;
+  }
+
+  // Contract settled — remove from active
+  const trade = S.activeTrades.splice(idx, 1)[0];
+  S.pendingCloses.delete(poc.contract_id); // FIX: clear close guard
+  const profit = parseFloat(poc.profit) || 0;
+  const isWin = profit > 0;
+  trade.pnl = profit;
+  trade.result = isWin ? 'win' : 'loss';
+  trade.exitTime = Date.now();
+
+  S.history.unshift(trade);
+  S.stats.total++;
+  S.stats.pnl += profit;
+
+  if (isWin) {
+    S.stats.wins++; S.stats.consec_losses = 0; S.stats.consec_wins++;
+  } else {
+    S.stats.losses++; S.stats.consec_wins = 0; S.stats.consec_losses++;
+    // FIX: cooldown set once per loss, applied in aiLoop correctly
+    S.aiTrading.cooldown = Math.max(S.aiTrading.cooldown, 3);
+  }
+
+  S.pnlHistory.push({t: Date.now(), v: S.stats.pnl});
+  updateMartingaleState(isWin);
+  saveState(); // save on trade events — not on every tick
+  log(`Contract ${poc.contract_id} ${isWin ? 'WON' : 'LOST'} ${profit >= 0 ? '+' : ''}$${profit.toFixed(2)}`, isWin ? 'ok' : 'err');
+  toast(`${isWin ? '✓ WON' : '✗ LOST'}: $${Math.abs(profit).toFixed(2)} on ${trade.sym}`, isWin ? 'ok' : 'err');
+  updateDashboard();
+  updatePositionsTable();
+  renderHistory();
+  updateRiskStatus();
+}
+
+const _debouncedUpdatePositions = debounce(updatePositionsTable, 300);
+
+// FIX: close guard prevents double-close of same contract
+function closeAllTrades() {
+  if (!S.activeTrades.length) { toast('No active trades', 'info'); return; }
+  let sent = 0;
+  S.activeTrades.forEach(t => {
+    if (!S.pendingCloses.has(t.id)) {
+      S.pendingCloses.add(t.id);
+      wsSend({sell: t.id, price: 0, req_id: nextReqId()});
+      sent++;
+    }
+  });
+  if (sent > 0) { toast(`Closing ${sent} trade(s)...`, 'warn'); log(`Close-all issued for ${sent} trade(s)`, 'warn'); }
+}
+
+function sellContract(id) {
+  if (S.pendingCloses.has(id)) { toast('Close already pending', 'warn'); return; }
+  S.pendingCloses.add(id);
+  wsSend({sell: id, price: 0, req_id: nextReqId()});
+  log(`Sell request: #${id}`, 'warn');
+}
+
+// ════════════ MARTINGALE ENGINE ════════════
+
+function getMartingaleStake(baseStake) {
+  if (!document.getElementById('mg-enabled')?.checked) return baseStake;
+  const type = document.getElementById('mg-type')?.value || 'classic';
+  const base = parseFloat(document.getElementById('mg-base')?.value || baseStake);
+  const step = S.martingale.step;
+  const mult = parseFloat(document.getElementById('mg-mult')?.value || 2);
+  return +getMartingaleStakeAt(base, type, step, mult).toFixed(2);
+}
+
+function getMartingaleStakeAt(base, type, step, mult) {
+  const fibs = [1,1,2,3,5,8,13,21,34,55];
+  switch(type) {
+    case 'classic':   return base * Math.pow(mult, step);
+    case 'modified':  return base * Math.pow(2.2, step);
+    case 'dalembert': return base * (1 + step);
+    case 'fibonacci': return base * (fibs[Math.min(step, fibs.length-1)]);
+    case 'reverse':   return base * Math.pow(mult, S.stats.consec_wins);
+    default:          return base;
+  }
+}
+
+function updateMartingaleState(isWin) {
+  const mg = S.martingale;
+  const maxSteps = parseInt(document.getElementById('mg-steps')?.value || 6);
+  const maxExp = parseFloat(document.getElementById('mg-max-exp')?.value || 50);
+  if (document.getElementById('mg-enabled')?.checked) {
+    if (isWin) { mg.step = 0; }
+    else { mg.step = Math.min(mg.step + 1, maxSteps); }
+  }
+  mg.currentStake = getMartingaleStake(parseFloat(document.getElementById('ai-stake')?.value || 1));
+  // Exposure guard
+  if (mg.totalExp >= maxExp) {
+    log(`Martingale stopped: exposure $${mg.totalExp.toFixed(2)} exceeds limit $${maxExp}`, 'err');
+    toast('Martingale exposure limit reached — stopped', 'err');
+    if (document.getElementById('mg-enabled')) document.getElementById('mg-enabled').checked = false;
+    mg.step = 0;
+  }
+  updateMartingaleLive();
+}
+
+function toggleMartingale(el) {
+  if (el.checked) {
+    log('Martingale enabled', 'ok');
+    toast('Martingale ON', 'ok');
+  } else {
+    S.martingale.step = 0;
+    log('Martingale disabled — step reset', 'warn');
+    toast('Martingale OFF', 'warn');
+  }
+  updateMartingalePreview();
+}
+
+function updateMartingaleLive() {
+  const mg = S.martingale;
+  const el_step = document.getElementById('mg-cur-step');
+  const el_stake = document.getElementById('mg-cur-stake');
+  const el_exp = document.getElementById('mg-cur-exp');
+  if (el_step) el_step.textContent = mg.step;
+  if (el_stake) el_stake.textContent = '$' + (mg.currentStake || 0).toFixed(2);
+  const base = parseFloat(document.getElementById('mg-base')?.value || 0.5);
+  const type = document.getElementById('mg-type')?.value || 'classic';
+  const mult = parseFloat(document.getElementById('mg-mult')?.value || 2);
+  let exp = 0;
+  for (let i = 0; i < mg.step; i++) exp += getMartingaleStakeAt(base, type, i, mult);
+  exp += mg.currentStake;
+  mg.totalExp = exp;
+  if (el_exp) el_exp.textContent = '$' + exp.toFixed(2);
+}
+
+function updateMartingalePreview() {
+  const base = parseFloat(document.getElementById('mg-base')?.value || 0.5);
+  const type = document.getElementById('mg-type')?.value || 'classic';
+  const steps = parseInt(document.getElementById('mg-steps')?.value || 6);
+  const mult = parseFloat(document.getElementById('mg-mult')?.value || 2);
+  const seq = [];
+  for (let i = 0; i <= steps; i++) seq.push(+getMartingaleStakeAt(base, type, i, mult).toFixed(2));
+  const el = document.getElementById('mg-sequence');
+  if (el) el.innerHTML = seq.map((v,i) => `
+    <div style="background:${i===0?'rgba(201,164,65,.14)':'rgba(239,68,68,.1)'};border:1px solid ${i===0?'var(--g)':'rgba(239,68,68,.3)'};color:${i===0?'var(--g)':'var(--err)'};border-radius:8px;padding:5px 10px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700">
+      Step ${i}<br>$${v}</div>`).join('');
+  if (window.chartMg) {
+    window.chartMg.data.labels = seq.map((_,i) => 'S'+i);
+    window.chartMg.data.datasets[0].data = seq;
+    window.chartMg.update('none');
+  }
+}
+
+// ════════════ RISK ENGINE ════════════
+
+// FIX: riskCheck returns true (pass) or a string (reason for failure)
+function riskCheck() {
+  const maxLoss = parseFloat(document.getElementById('rm-max-loss')?.value || 20);
+  const maxProfit = parseFloat(document.getElementById('rm-max-profit')?.value || 50);
+  const maxConsec = parseInt(document.getElementById('rm-max-consec')?.value || 3);
+  const maxSession = parseInt(document.getElementById('rm-max-session')?.value || 100);
+  if (S.stats.pnl <= -maxLoss) {
+    log('Trading halted: max daily loss reached', 'err');
+    return `Max daily loss $${maxLoss} hit! Trading stopped.`;
+  }
+  if (S.stats.pnl >= maxProfit) {
+    log('Trading stopped: profit target reached', 'ok');
+    return `Profit target $${maxProfit} reached! Trading stopped.`;
+  }
+  if (S.stats.total >= maxSession) {
+    log('Session trade limit reached', 'warn');
+    return `Session limit of ${maxSession} trades reached.`;
+  }
+  if (S.stats.consec_losses >= maxConsec) {
+    log(`${maxConsec} consecutive losses — cooldown applied`, 'warn');
+    S.aiTrading.cooldown = Math.max(S.aiTrading.cooldown, parseInt(document.getElementById('rm-cooldown')?.value || 10));
+    // Note: return true (don't stop, just cooldown)
+    return true;
+  }
+  return true;
+}
+
+function saveRiskSettings() {
+  S.risk.maxLoss = parseFloat(document.getElementById('rm-max-loss').value) || 20;
+  S.risk.maxProfit = parseFloat(document.getElementById('rm-max-profit').value) || 50;
+  S.risk.maxConsec = parseInt(document.getElementById('rm-max-consec').value) || 3;
+  S.risk.cooldown = parseInt(document.getElementById('rm-cooldown').value) || 10;
+  S.risk.maxSession = parseInt(document.getElementById('rm-max-session').value) || 100;
+  saveState();
+  toast('Risk settings saved', 'ok');
+}
+
+function toggleAIRisk(el) {
+  toast(el.checked ? 'AI Risk Control ON' : 'AI Risk Control OFF', el.checked ? 'ok' : 'warn');
+}
+
+function updateRiskStatus() {
+  const maxLoss = parseFloat(document.getElementById('rm-max-loss')?.value || 20);
+  const maxProfit = parseFloat(document.getElementById('rm-max-profit')?.value || 50);
+  const loss = Math.max(0, -S.stats.pnl);
+  const profit = Math.max(0, S.stats.pnl);
+  const lb = document.getElementById('rm-loss-bar');   if(lb) lb.style.width = Math.min(100, (loss/maxLoss)*100) + '%';
+  const pb = document.getElementById('rm-profit-bar'); if(pb) pb.style.width = Math.min(100, (profit/maxProfit)*100) + '%';
+  const lv = document.getElementById('rm-loss-val');   if(lv) lv.textContent = `$${loss.toFixed(2)} / $${maxLoss}`;
+  const pv = document.getElementById('rm-profit-val'); if(pv) pv.textContent = `$${profit.toFixed(2)} / $${maxProfit}`;
+  const cv = document.getElementById('rm-consec-val'); if(cv){ cv.textContent = S.stats.consec_losses; cv.style.color = S.stats.consec_losses >= 3 ? 'var(--err)' : 'var(--tx)'; }
+  const sv = document.getElementById('rm-sess-val');   if(sv) sv.textContent = S.stats.total;
+}
+
+// ════════════ UI FUNCTIONS ════════════
+
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+  if (el) el.classList.add('active');
+  const titles = {
+    dashboard:'Dashboard', connection:'Connection', signals:'Signals & Analytics',
+    strategies:'Strategies', positions:'Active Positions', history:'Trade History',
+    risk:'Risk Management', martingale:'Martingale System', logs:'System Logs'
+  };
+  document.getElementById('page-title').textContent = titles[id] || id;
+  // Lazy-render on page switch
+  if (id === 'signals') updateSignalCards();
+  if (id === 'history') renderHistory();
+  if (id === 'logs') renderLogs();
+  if (id === 'martingale') updateMartingalePreview();
+  if (id === 'risk') updateRiskStatus();
+  if (id === 'positions') updatePositionsTable();
+  // Close mobile sidebar on nav
+  if (window.innerWidth < 768) closeSidebarMobile();
+}
+
+function toggleSidebar() {
+  if (window.innerWidth < 768) {
+    toggleSidebarMobile();
+  } else {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
+}
+function toggleSidebarMobile() {
+  const sb = document.getElementById('sidebar');
+  const bd = document.getElementById('sidebar-backdrop');
+  const open = sb.classList.toggle('mobile-open');
+  bd.classList.toggle('active', open);
+}
+function closeSidebarMobile() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebar-backdrop').classList.remove('active');
+}
+
+function toggleDark() {
+  document.documentElement.classList.toggle('dark');
+  const isDark = document.documentElement.classList.contains('dark');
+  document.getElementById('dark-btn').innerHTML = isDark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+  localStorage.setItem('derivai_dark', isDark ? '1' : '0');
+}
+
+function updateDashboard() {
+  updateBalanceUI();
+  const pnl = S.stats.pnl;
+  const el = document.getElementById('db-pnl');
+  if (el) { el.textContent = (pnl >= 0 ? '+' : '') + '$' + Math.abs(pnl).toFixed(2); el.style.color = pnl >= 0 ? 'var(--ok)' : 'var(--err)'; }
+  const pct = S.stats.startBalance > 0 ? ((pnl / S.stats.startBalance) * 100) : 0;
+  const pe = document.getElementById('db-pnl-pct'); if(pe) pe.textContent = (pnl >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+  const wr = S.stats.total > 0 ? ((S.stats.wins / S.stats.total) * 100) : 0;
+  const wd = document.getElementById('db-winrate'); if(wd) { wd.textContent = wr.toFixed(0) + '%'; wd.style.color = wr >= 50 ? 'var(--ok)' : 'var(--err)'; }
+  const wt = document.getElementById('db-trades'); if(wt) wt.textContent = `${S.stats.total} trades (${S.stats.wins}W/${S.stats.losses}L)`;
+  const at = document.getElementById('db-active'); if(at) at.textContent = S.activeTrades.length;
+  const dm = document.getElementById('db-mode'); if(dm) dm.textContent = S.aiTrading.running ? 'Mode: AI' : 'Mode: Manual';
+  updatePnLChart();
+  updateDistChart();
+  updateRiskStatus();
+}
+
+function updateMarketOverview() {
+  const c = document.getElementById('market-overview'); if(!c) return;
+  c.innerHTML = MARKETS.map(m => {
+    const md = S.markets[m.sym];
+    const dig = md.digits[0] !== undefined ? md.digits[0] : '—';
+    const isEven = dig !== '—' && dig % 2 === 0;
+    const sig = md.signal;
+    const sub = md.subscribed;
+    const price = md.lastTick ? md.lastTick.quote.toFixed(2) : '—';
+    return `<div class="card" style="padding:12px;text-align:center;border-color:${sub ? 'var(--g)' : 'var(--bd)'}">
+      <div style="font-size:11px;font-weight:700;color:var(--soft);margin-bottom:4px">${m.short}</div>
+      <div class="mono" style="font-size:13px;font-weight:700;margin-bottom:4px">${price}</div>
+      <div class="digit-chip ${dig !== '—' ? (isEven ? 'd-even' : 'd-odd') : ''}" style="margin:0 auto 6px;${dig==='—'?'opacity:.3':''}">${dig}</div>
+      <div>${sig ? `<span class="${sig.direction === 'EVEN' ? 'sig-even' : 'sig-odd'}">${sig.direction}</span>` : `<span class="sig-wait">—</span>`}</div>
+      ${sig ? `<div style="font-size:9px;color:var(--soft);margin-top:3px">${sig.confidence.toFixed(0)}%</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function updateSignalCards() {
+  const c = document.getElementById('signal-cards'); if(!c) return;
+  c.innerHTML = MARKETS.map(m => {
+    const md = S.markets[m.sym];
+    const sig = md.signal;
+    const digits = md.digits.slice(0, 20);
+    const evenCnt = digits.filter(d => d % 2 === 0).length;
+    const oddCnt = digits.length - evenCnt;
+    const pEven = sig ? sig.pEven.toFixed(1) : 50;
+    const pOdd = sig ? sig.pOdd.toFixed(1) : 50;
+    return `<div class="card" style="padding:18px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+        <div><div style="font-size:14px;font-weight:700">${m.name}</div>
+          <div class="mono" style="font-size:11px;color:var(--soft)">${m.sym}</div></div>
+        <div style="text-align:right">
+          ${sig ? `<div class="${sig.direction === 'EVEN' ? 'sig-even' : 'sig-odd'}">${sig.direction} ${sig.confidence.toFixed(1)}%</div>` : `<div class="sig-wait">NO SIGNAL</div>`}
+          ${sig && sig.tradeable ? `<div style="font-size:10px;color:var(--ok);margin-top:3px;font-weight:700">✓ TRADEABLE (${sig.confirmations})</div>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;gap:5px;margin-bottom:10px;flex-wrap:wrap">
+        ${digits.slice(0,15).map(d=>`<div class="digit-chip ${d%2===0?'d-even':'d-odd'}">${d}</div>`).join('')}
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:3px">
+          <span style="color:var(--ok)">EVEN ${pEven}%</span><span style="color:var(--err)">ODD ${pOdd}%</span>
+        </div>
+        <div style="height:6px;border-radius:99px;background:rgba(239,68,68,.2);overflow:hidden">
+          <div style="height:100%;border-radius:99px;background:rgba(34,197,94,.7);width:${pEven}%;transition:width .5s"></div>
+        </div>
+      </div>
+      ${sig && sig.reasons.length ? `<div style="font-size:11px;color:var(--soft)">${sig.reasons.map(r=>`<div style="margin-bottom:2px">${r}</div>`).join('')}</div>` : '<div style="font-size:11px;color:var(--soft)">Collecting data…</div>'}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px;font-size:10.5px;text-align:center">
+        <div style="background:var(--pb);border-radius:6px;padding:5px"><div style="color:var(--soft)">Even</div><div class="mono" style="color:var(--ok);font-weight:700">${evenCnt}</div></div>
+        <div style="background:var(--pb);border-radius:6px;padding:5px"><div style="color:var(--soft)">Odd</div><div class="mono" style="color:var(--err);font-weight:700">${oddCnt}</div></div>
+        <div style="background:var(--pb);border-radius:6px;padding:5px"><div style="color:var(--soft)">Streak</div><div class="mono" style="font-weight:700">${sig ? sig.streak.length : '—'}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateSubGrid() {
+  const g = document.getElementById('sub-grid'); if(!g) return;
+  g.innerHTML = MARKETS.map(m => `
+    <div class="card" style="padding:14px;text-align:center;border-color:${S.markets[m.sym].subscribed ? 'var(--g)' : 'var(--bd)'}">
+      <div style="font-size:12px;font-weight:700;margin-bottom:4px">${m.short}</div>
+      <div style="font-size:10px;color:var(--soft);margin-bottom:6px">${m.name}</div>
+      <div style="font-size:11px;font-weight:700;margin-bottom:8px;color:${S.markets[m.sym].subscribed ? 'var(--ok)' : 'var(--soft)'}">
+        ${S.markets[m.sym].subscribed ? '<i class="fas fa-circle" style="font-size:7px"></i> Live' : '<i class="fas fa-circle" style="font-size:7px;opacity:.3"></i> Idle'}
+      </div>
+      <button class="btn ${S.markets[m.sym].subscribed ? 'btn-danger' : 'btn-success'} btn-sm" style="width:100%;font-size:10px" onclick="${S.markets[m.sym].subscribed ? 'unsubMarketBtn' : 'subMarketBtn'}('${m.sym}')">
+        ${S.markets[m.sym].subscribed ? 'Unsub' : 'Subscribe'}
+      </button>
+    </div>`).join('');
+}
+
+function subMarketBtn(sym) { subscribeMarket(sym); }
+function unsubMarketBtn(sym) { unsubscribeMarket(sym); toast('Unsubscribed from ' + sym, 'info'); }
+
+function buildMarketSelectors() {
+  ['man-markets','ai-markets'].forEach(id => {
+    const el = document.getElementById(id); if(!el) return;
+    el.innerHTML = MARKETS.map(m => `
+      <div>
+        <input type="checkbox" class="mkt-check" id="${id}-${m.sym}" value="${m.sym}">
+        <label class="mkt-label" for="${id}-${m.sym}">${m.short}</label>
+      </div>`).join('');
+  });
+}
+
+function getSelectedMarkets(containerId) {
+  return Array.from(document.querySelectorAll(`#${containerId} input[type=checkbox]:checked`)).map(c => c.value);
+}
+
+function updatePositionsTable() {
+  const tb = document.getElementById('pos-table');
+  const ct = document.getElementById('pos-count');
+  if (ct) ct.textContent = `(${S.activeTrades.length})`;
+  if (!tb) return;
+  if (!S.activeTrades.length) {
+    tb.innerHTML = '<tr><td colspan="10" style="text-align:center;color:var(--soft);padding:30px">No active positions</td></tr>';
+    return;
+  }
+  tb.innerHTML = S.activeTrades.map(t => {
+    const livePnl = t.livePnl || 0;
+    const pnlColor = livePnl >= 0 ? 'var(--ok)' : 'var(--err)';
+    const isPendingClose = S.pendingCloses.has(t.id);
+    return `<tr>
+      <td class="mono" style="font-size:11px">${t.id}</td>
+      <td><strong>${t.sym}</strong></td>
+      <td><span class="${t.type === 'DIGITEVEN' ? 'sig-even' : 'sig-odd'}">${t.type === 'DIGITEVEN' ? 'EVEN' : 'ODD'}</span></td>
+      <td class="mono">$${(t.stake||0).toFixed(2)}</td>
+      <td class="mono">${t.dur}${t.durUnit}</td>
+      <td class="mono" style="font-size:11px">${new Date(t.entryTime).toLocaleTimeString()}</td>
+      <td class="mono" style="color:${pnlColor}">${livePnl >= 0 ? '+' : ''}$${livePnl.toFixed(2)}</td>
+      <td style="font-size:11px;color:var(--soft)">${t.source}</td>
+      <td><span style="color:${isPendingClose?'var(--warn)':'var(--ok)'};font-size:11px;font-weight:700">${isPendingClose?'CLOSING':'ACTIVE'}</span></td>
+      <td><button class="btn btn-danger btn-sm" onclick="sellContract(${t.id})" ${isPendingClose?'disabled':''}>
+        ${isPendingClose?'<span class="spinner"></span>':'<i class="fas fa-times"></i>'}
+      </button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderHistory() {
+  const tb = document.getElementById('hist-table');
+  const ct = document.getElementById('hist-count');
+  const mf = document.getElementById('hist-filter-market')?.value || 'all';
+  const rf = document.getElementById('hist-filter-result')?.value || 'all';
+  const filtered = S.history.filter(t => (mf === 'all' || t.sym === mf) && (rf === 'all' || t.result === rf));
+  if (ct) ct.textContent = `(${filtered.length})`;
+  if (!tb) return;
+  if (!filtered.length) {
+    tb.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--soft);padding:30px">No trade history</td></tr>';
+    return;
+  }
+  tb.innerHTML = filtered.slice(0, 200).map((t, i) => `
+    <tr>
+      <td class="mono" style="color:var(--soft)">${filtered.length - i}</td>
+      <td class="mono" style="font-size:11px">${new Date(t.entryTime||0).toLocaleTimeString()}</td>
+      <td><strong>${t.sym||'—'}</strong></td>
+      <td><span class="${(t.type||'')==='DIGITEVEN'?'sig-even':'sig-odd'}">${(t.type||'')==='DIGITEVEN'?'EVEN':'ODD'}</span></td>
+      <td class="mono">$${(t.stake||0).toFixed(2)}</td>
+      <td><span style="font-weight:700;color:${t.result==='win'?'var(--ok)':'var(--err)'}">${(t.result||'').toUpperCase()}</span></td>
+      <td class="mono" style="color:${(t.pnl||0)>=0?'var(--ok)':'var(--err)'}">${(t.pnl||0)>=0?'+':''}$${Math.abs(t.pnl||0).toFixed(2)}</td>
+      <td style="font-size:11px;color:var(--soft)">${t.source||'—'}</td>
+      <td class="mono" style="font-size:11px;color:var(--g)">${t.signal?t.signal.confidence.toFixed(0)+'%':'—'}</td>
+    </tr>`).join('');
+}
+
+function clearHistory() { S.history = []; saveState(); renderHistory(); toast('History cleared', 'info'); }
+function exportHistory() {
+  const csv = ['#,Time,Market,Type,Stake,Result,P&L,Strategy,AI%'].concat(
+    S.history.map((t,i) => `${i+1},${new Date(t.entryTime||0).toISOString()},${t.sym||''},${t.type||''},${t.stake||0},${t.result||''},${t.pnl||0},${t.source||''},${t.signal?.confidence?.toFixed(1)||''}`)
+  ).join('\n');
+  downloadText(csv, 'derivai_history.csv');
+}
+
+// ════════════ AUTO-REFRESH SIGNALS ════════════
+let refreshInterval = null, refreshCount = 0;
+function toggleAutoRefresh(el) { if (el.checked) startRefresh(); else stopRefresh(); }
+function startRefresh() {
+  stopRefresh();
+  refreshCount = 0;
+  refreshInterval = setInterval(() => {
+    if (document.getElementById('page-signals').classList.contains('active')) updateSignalCards();
+    refreshCount = (refreshCount + 1) % 10;
+    const cd = document.getElementById('refresh-countdown');
+    if (cd) cd.textContent = `Next in ${9 - refreshCount}s`;
+  }, 1000);
+}
+function stopRefresh() { if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; } }
+
+// ════════════ CHARTS ════════════
+let chartPnl, chartDist;
+function initCharts() {
+  const opt = {responsive:true, plugins:{legend:{display:false}}, scales:{x:{display:false}, y:{display:true, grid:{color:'rgba(128,128,128,.08)'}, ticks:{color:'#888', font:{size:10}}}}};
+  const c1 = document.getElementById('chart-pnl')?.getContext('2d');
+  if (c1) chartPnl = new Chart(c1, {type:'line', data:{labels:[], datasets:[{data:[], borderColor:'#C9A441', backgroundColor:'rgba(201,164,65,.08)', tension:.4, fill:true, pointRadius:0, borderWidth:2}]}, options:{...opt}});
+  const c2 = document.getElementById('chart-dist')?.getContext('2d');
+  if (c2) chartDist = new Chart(c2, {type:'doughnut', data:{labels:['Wins','Losses'], datasets:[{data:[0,0], backgroundColor:['rgba(34,197,94,.7)','rgba(239,68,68,.7)'], borderWidth:0}]}, options:{responsive:true, plugins:{legend:{position:'bottom', labels:{color:'#888', font:{size:11}}}}, cutout:'65%'}});
+  const c3 = document.getElementById('chart-martingale')?.getContext('2d');
+  if (c3) window.chartMg = new Chart(c3, {type:'bar', data:{labels:[], datasets:[{data:[], backgroundColor:Array(10).fill(0).map((_,i) => i===0?'rgba(201,164,65,.6)':'rgba(239,68,68,.5)'), borderWidth:0, borderRadius:6}]}, options:{responsive:true, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#888', font:{size:10}}}, y:{grid:{color:'rgba(128,128,128,.08)'}, ticks:{color:'#888', font:{size:10}}}}}});
+}
+function updatePnLChart() {
+  if (!chartPnl) return;
+  const data = S.pnlHistory.slice(-60);
+  chartPnl.data.labels = data.map(_ => '');
+  chartPnl.data.datasets[0].data = data.map(d => d.v);
+  chartPnl.data.datasets[0].borderColor = S.stats.pnl >= 0 ? '#22C55E' : '#EF4444';
+  chartPnl.data.datasets[0].backgroundColor = S.stats.pnl >= 0 ? 'rgba(34,197,94,.08)' : 'rgba(239,68,68,.08)';
+  chartPnl.update('none');
+}
+function updateDistChart() {
+  if (!chartDist) return;
+  chartDist.data.datasets[0].data = [S.stats.wins || 0, S.stats.losses || 0];
+  chartDist.update('none');
+}
+
+// ════════════ RESET ════════════
+function resetAll() {
+  if (!confirm('Reset all session data (history, stats, logs)? Connection settings preserved.')) return;
+  S.history = []; S.logs = [];
+  S.stats = {total:0, wins:0, losses:0, pnl:0, consec_losses:0, consec_wins:0, startBalance:S.balance};
+  S.pnlHistory = []; S.activeTrades = [];
+  S.martingale = {enabled:false, step:0, currentStake:0.5, totalExp:0};
+  S.pendingCloses.clear(); S.pendingProposals = {};
+  stopAITrading();
+  saveState(); updateDashboard(); renderHistory(); renderLogs();
+  toast('Session data reset', 'info'); log('All data reset by user', 'warn');
+}
+
+// ════════════ INIT ════════════
+window.addEventListener('load', () => {
+  // Dark mode
+  if (localStorage.getItem('derivai_dark') === '1') {
+    document.documentElement.classList.add('dark');
+    document.getElementById('dark-btn').innerHTML = '<i class="fas fa-sun"></i>';
+  }
+
+  // Load persisted state
+  loadState();
+
+  // Build UI
+  buildMarketSelectors();
+  updateSubGrid();
+  initCharts();
+  updateDashboard();
+  updateMarketOverview();
+  renderHistory();
+  renderLogs();
+  updateMartingalePreview();
+  startRefresh();
+
+  // Restore saved connection credentials
+  const tok = localStorage.getItem('derivai_token');
+  const appid = localStorage.getItem('derivai_appid');
+  if (tok) document.getElementById('inp-token').value = tok;
+  if (appid) document.getElementById('inp-appid').value = appid;
+
+  log('DerivAI EvenOdd Pro v2 initialized', 'ok');
+  toast('DerivAI EvenOdd Pro v2 ready', 'info');
+
+  // Note: removed fake data simulation — all data must come from real Deriv API
+  // Connect to Deriv if token available
+  if (tok) {
+    S._connToken = tok;
+    S._connAppId = appid || '1089';
+    log('Saved credentials found — auto-connecting...', 'info');
+    S.reconnectAttempts = 0;
+    initWS();
+  }
+});
+</script>
+</body>
+</html>
