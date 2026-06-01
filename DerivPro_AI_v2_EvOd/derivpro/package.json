@@ -1,0 +1,29 @@
+{
+  "name": "derivpro-ai",
+  "version": "2.0.0",
+  "description": "DerivPro AI — Quantum Terminal | EvOdDirectional Strategy | Deriv WebSocket PWA",
+  "main": "server.js",
+  "scripts": {
+    "start":   "node server.js",
+    "dev":     "node server.js",
+    "health":  "curl -s http://localhost:${PORT:-3000}/health | node -e \"process.stdin.resume(); let d=''; process.stdin.on('data',c=>d+=c); process.stdin.on('end',()=>console.log(JSON.parse(d).status))\"",
+    "lint":    "echo 'No lint configured'",
+    "test":    "node -e \"require('./server.js'); setTimeout(()=>process.exit(0),500)\""
+  },
+  "keywords": ["deriv","trading","pwa","websocket","even-odd","volatility","synthetic-indices","ai","evod","martingale"],
+  "author": "DerivPro AI",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm":  ">=9.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "private": true,
+  "homepage": ".",
+  "repository": { "type": "git", "url": "" },
+  "railway": {
+    "builder": "NIXPACKS",
+    "startCommand": "node server.js"
+  }
+}
